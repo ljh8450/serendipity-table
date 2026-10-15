@@ -1,0 +1,38 @@
+**/node_modules/
+**/dist/
+**/build/
+**/.gradle/
+.local/
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+**/test-results/
+**/playwright-report/
+*.log
+
+# Local project context, source documents, agent configuration and scratch files
+/docs/
+/plan/
+/.agents/
+/.codex/
+/AGENTS.md
+/codex-log/
+/tmp/
+
+# Generated template documentation and unused demo artwork
+/frontend/README.md
+/backend/HELP.md
+/frontend/src/assets/vite.svg
+/frontend/src/assets/react.svg
+/frontend/src/assets/hero.png
+/frontend/public/icons.svg
+/frontend/public/favicon.svg
+
+# Local editor and operating system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

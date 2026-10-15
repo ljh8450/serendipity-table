@@ -1,0 +1,36 @@
+{
+  "name": "@serendipity-table/frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint src vite.config.ts --deny-warnings",
+    "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
+    "typecheck": "tsc -b",
+    "test:ci": "vitest run"
+  },
+  "dependencies": {
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "@vitejs/plugin-react": "6.1.1",
+    "oxlint": "1.81.0",
+    "typescript": "6.0.2",
+    "vite": "8.3.0",
+    "vitest": "5.0.4",
+    "@testing-library/react": "16.3.2",
+    "@testing-library/jest-dom": "6.9.1",
+    "jsdom": "27.4.0"
+  },
+  "engines": {
+    "node": "22.12.0",
+    "npm": "11.18.0"
+  },
+  "packageManager": "npm@11.18.0"
+}

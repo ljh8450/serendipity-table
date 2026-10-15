@@ -1,0 +1,5 @@
+:root { font-family: system-ui, sans-serif; color: #24382e; background: #faf8f2; line-height: 1.6; font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button { font: inherit; cursor: pointer; padding: .75rem 1.25rem; background: #294c3c; color: white; border: 0; border-radius: .5rem; min-height: 44px; }
+button:focus-visible { outline: 3px solid #bd6d26; outline-offset: 4px; }
