@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 
-const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+
 export default function App() {
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
@@ -9,14 +9,16 @@ export default function App() {
     const controller = new AbortController()
     let active = true
     const timeout = setTimeout(() => controller.abort(), 8000)
-    fetch(`${apiBase}/api/system/status`, { signal: controller.signal })
+    const apiBase = import.meta.env.VITE_SUPABASE_URL?.replace(/\/$/, '')
+    const request = apiBase ? fetch(`${apiBase}/functions/v1/system-status`, { signal: controller.signal }) : Promise.reject(new Error('Missing Supabase URL'))
+    request
       .then(async response => {
         if (!response.ok) throw new Error('API unavailable')
         const body: unknown = await response.json()
         if (!body || typeof body !== 'object' || !('status' in body) || body.status !== 'ready') {
           throw new Error('Invalid response')
         }
-        setState('ready')
+        if (active) setState('ready')
       })
       .catch(() => { if (active) setState('error') })
       .finally(() => clearTimeout(timeout))
