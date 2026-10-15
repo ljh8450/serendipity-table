@@ -1,7 +1,6 @@
 **/node_modules/
 **/dist/
 **/build/
-**/.gradle/
 .local/
 .env
 .env.*
@@ -24,7 +23,6 @@
 
 # Generated template documentation and unused demo artwork
 /frontend/README.md
-/backend/HELP.md
 /frontend/src/assets/vite.svg
 /frontend/src/assets/react.svg
 /frontend/src/assets/hero.png
