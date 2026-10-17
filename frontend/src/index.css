@@ -1,5 +1,13 @@
-:root { font-family: system-ui, sans-serif; color: #24382e; background: #faf8f2; line-height: 1.6; font-synthesis: none; }
+@font-face { font-family: Pretendard; src: url('/fonts/Pretendard-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: Pretendard; src: url('/fonts/Pretendard-SemiBold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: Pretendard; src: url('/fonts/Pretendard-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+:root { font-family: Pretendard, system-ui, sans-serif; color: #3A342D; background: #F4EEE1; line-height: 1.6; font-synthesis: none; }
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; }
-button { font: inherit; cursor: pointer; padding: .75rem 1.25rem; background: #294c3c; color: white; border: 0; border-radius: .5rem; min-height: 44px; }
-button:focus-visible { outline: 3px solid #bd6d26; outline-offset: 4px; }
+button, input { font: inherit; min-height: 48px; border-radius: 8px; }
+button { cursor: pointer; padding: 12px 20px; background: #14513F; color: #FBF9F4; border: 1px solid #14513F; font-weight: 600; }
+button:disabled { opacity: .65; cursor: wait; }
+button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid #14513F; outline-offset: 3px; box-shadow: 0 0 0 3px #FBF9F4; }
+input { width: 100%; color: inherit; background: #FBF9F4; border: 1px solid #756B5E; padding: 12px; }
+label { display: block; font-weight: 600; margin-bottom: 8px; }
+input[aria-invalid=true] { border-color: #B42318; }

@@ -22,10 +22,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-      - run: npx --yes --package=deno@2.9.6 deno check supabase/functions/system-status/index.ts
-      - run: npx --yes --package=deno@2.9.6 deno test supabase/functions/system-status/handler_test.ts
+      - run: npx --yes --package=deno@2.9.6 deno check supabase/functions/system-status/index.ts supabase/functions/member/index.ts
+      - run: npx --yes --package=deno@2.9.6 deno test supabase/functions/
       - run: npx --yes supabase@2.121.0 start
-      - run: docker exec -i supabase_db_serendipity-table psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/connection_permissions.sql
+      - run: for test in supabase/tests/*.sql; do docker exec -i supabase_db_serendipity-table psql -U postgres -d postgres -v ON_ERROR_STOP=1 < "$test" || exit 1; done
+      - run: node scripts/verify-safety-local.mjs
+      - run: node scripts/verify-preferences-local.mjs
+      - run: node scripts/verify-feedback-local.mjs
+      - run: node scripts/verify-matching-local.mjs
       - run: npx --yes supabase@2.121.0 stop
         if: always()
   e2e:
@@ -44,13 +48,14 @@ jobs:
         run: |
           echo 'HEALTH_DATABASE_SSL=disable' > supabase/functions/.env.local
           echo 'APP_ALLOWED_ORIGINS=http://127.0.0.1:4173' >> supabase/functions/.env.local
-      - run: npx --yes supabase@2.121.0 functions serve system-status --env-file supabase/functions/.env.local > edge.log 2>&1 &
+      - run: npx --yes supabase@2.121.0 functions serve --env-file supabase/functions/.env.local > edge.log 2>&1 &
       - run: |
           for i in $(seq 1 60); do
             if curl --fail http://127.0.0.1:54331/functions/v1/system-status; then exit 0; fi
             sleep 2
           done
           exit 1
+      - run: node scripts/prepare-member-e2e.mjs
       - run: npm ci && npm run build
         working-directory: frontend
       - run: npm ci && npx playwright install --with-deps chromium && npm run test:e2e

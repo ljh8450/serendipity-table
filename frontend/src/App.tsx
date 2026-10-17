@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import MemberArea from './MemberArea'
 
 
 export default function App() {
@@ -37,5 +38,6 @@ export default function App() {
       </p>
       {state === 'error' && <button onClick={() => { setState('loading'); setAttempt(value => value + 1) }}>다시 시도</button>}
     </section>
+    <MemberArea />
   </main>
 }
