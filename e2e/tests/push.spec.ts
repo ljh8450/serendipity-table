@@ -15,15 +15,22 @@ test('push denial keeps inbox usable; private dispatcher and subscription author
   const token = (await (await auth).json()).access_token
   const settings = page.getByRole('region', { name: '이 기기 푸시 알림', exact: true })
   await expect(settings.getByText(/브라우저에서 알림이 차단돼 있어요/)).toBeVisible()
-  await expect(settings.getByRole('button', { name: '이 기기 푸시 켜기', exact: true })).toBeDisabled()
-  const refreshed = page.waitForResponse(r => r.url().endsWith('/member/notifications'))
-  await page.getByRole('button', { name: '알림 새로고침', exact: true }).click()
-  expect((await refreshed).status()).toBe(200)
   const headers = { authorization: `Bearer ${token}` }
   const api = `${data.apiUrl}/functions/v1/member`
   const config = await request.get(`${api}/push`, { headers })
   expect(config.status()).toBe(200)
-  expect(JSON.stringify(await config.json())).not.toMatch(/endpoint|privateKey|p256dh|dispatchToken/)
+  const configDto = await config.json()
+  expect(JSON.stringify(configDto)).not.toMatch(/endpoint|privateKey|p256dh|dispatchToken/)
+  const enable = settings.getByRole('button', { name: '이 기기 푸시 켜기', exact: true })
+  if (configDto.publicKey) {
+    await expect(enable).toBeDisabled()
+  } else {
+    await expect(settings.getByText('푸시 연결을 준비하고 있어요. 앱 내 알림은 사용할 수 있어요.', { exact: true })).toBeVisible()
+    await expect(enable).toHaveCount(0)
+  }
+  const refreshed = page.waitForResponse(r => r.url().endsWith('/member/notifications'))
+  await page.getByRole('button', { name: '알림 새로고침', exact: true }).click()
+  expect((await refreshed).status()).toBe(200)
   expect((await request.post(`${api}/push/subscribe`, { headers, data: { subscription: { endpoint: 'https://localhost/private', keys: { auth: 'A'.repeat(22), p256dh: 'B' + 'A'.repeat(86) } } } })).status()).toBe(422)
   expect((await request.post(`${api}/push/test`, { headers, data: { userId: 'other' } })).status()).toBe(422)
   expect((await request.get(`${api}/operations/push`, { headers })).status()).toBe(403)
