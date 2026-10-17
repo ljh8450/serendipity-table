@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { intakeRequest } from './intake-api'
 import type { Intake, Identity, Onboarding, ApplicationInput, Group } from './intake-api'
 import type { Member } from './member-api'
 import { memberRequest } from './member-api'
 import MatchingPanel from './MatchingPanel'
+const ReturnRecommendations = lazy(() => import('./ReturnRecommendations'))
 
 const emptyInput = (): ApplicationInput => ({ slotIds: [], regions: [], otherRegion: '', ticketCode: '' })
 const emptyOnboarding = (): Onboarding => ({ instagram: '', birthYear: '', gender: '', occupation: '', mbti: [], interests: [], traits: [], preferredTraits: [], mealBudgetBands: [], avoidedFoods: '', allergies: '' })
@@ -43,6 +44,14 @@ export default function IntakeForms({ token, member, onMemberChange }: { token: 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [attempt, setAttempt] = useState(0)
   const requestKey = useRef(crypto.randomUUID())
+  const applicationHeading = useRef<HTMLHeadingElement>(null)
+  const focusApplication = useRef(false)
+  useLayoutEffect(() => {
+    if (focusApplication.current && step === 2 && applicationHeading.current) {
+      applicationHeading.current.focus()
+      focusApplication.current = false
+    }
+  }, [input.slotIds, step])
   useEffect(() => {
     let active = true
     intakeRequest(token).then(value => {
@@ -86,6 +95,16 @@ export default function IntakeForms({ token, member, onMemberChange }: { token: 
   if (!data) return <div>{error ? <><p role="alert">{error}</p><button onClick={() => setAttempt(v => v + 1)}>다시 불러오기</button></> : <p>가입·온보딩 정보를 불러오고 있어요.</p>}</div>
   const regionGroup = data.groups.find(group => group.key === 'regions')!
   return <div>
+    <Suspense fallback={<p>다음 식탁 추천을 불러오고 있어요.</p>}><ReturnRecommendations token={token} onSelect={async slot => {
+      const latest = await intakeRequest(token)
+      if (!latest.slots.some(s => s.id === slot.id && s.regionCode === slot.regionCode)) throw new Error('EVENT_CLOSED')
+      setData(latest)
+      focusApplication.current = true
+      updateInput({ ...input, regions: [slot.regionCode], slotIds: [slot.id], otherRegion: '' })
+      setSourceId(null)
+      setError(''); setFieldErrors({})
+      setStep(2)
+    }} /></Suspense>
     <MatchingPanel token={token} onReview={() => setStep(2)} onChanged={() => setAttempt(v => v + 1)} />
     <nav className="intake-steps" aria-label="참가 준비 단계">{['가입 기본정보','온보딩','회차 신청'].map((label, index) => <button type="button" key={label} className={step === index ? '' : 'secondary'} aria-current={step === index ? 'step' : undefined} onClick={() => { setStep(index); setNotice(''); setFieldErrors({}) }}>{index + 1}. {label}</button>)}</nav>
     {error && <div role="alert"><p className="member-error">{error}</p><button className="secondary" onClick={() => setAttempt(v => v + 1)}>다시 불러오기</button></div>}
@@ -113,7 +132,7 @@ export default function IntakeForms({ token, member, onMemberChange }: { token: 
       <button disabled={busy}>온보딩 저장하고 계속</button>
     </form>}
     {step === 2 && <>
-      <h3>이번 회차 신청</h3><p>식사 비용은 현장에서 각자 계산해요. 참가비와 별도입니다. 일정·지역 조합을 직접 선택해 주세요.</p>
+      <h3 ref={applicationHeading} tabIndex={-1}>이번 회차 신청</h3><p>식사 비용은 현장에서 각자 계산해요. 참가비와 별도입니다. 일정·지역 조합을 직접 선택해 주세요.</p>
       <div className="previous-forms"><h4>기존 신청서 불러오기</h4>{data.applications.length ? data.applications.map(application => <div key={application.id}><p>{date(application.submittedAt)} 신청 · {applicationLabels[application.applicationStatus] ?? '확인 필요'} · 결제 {paymentLabels[application.paymentStatus] ?? '확인 필요'} · 매칭 {matchingLabels[application.matchingStatus] ?? '확인 필요'}</p><p>선택한 참가권: {application.input.ticketCode === 'single_v2' ? '1회권' : application.input.ticketCode.startsWith('membership') ? '멤버십' : '이전 참가권'}</p><button className="secondary" disabled={busy} onClick={async () => {
         const value = await run(() => intakeRequest(token, '/reuse', { sourceId: application.id }), '이전 지역·참가권을 가져왔어요. 날짜는 다시 선택하고 현재 프로필을 확인해 주세요.')
         if (value?.draft) { setInput(value.draft.input); setSourceId(value.draft.sourceId); requestKey.current = crypto.randomUUID() }

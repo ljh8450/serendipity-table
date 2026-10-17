@@ -62,6 +62,7 @@ Deno.serve(createMemberHandler({
         : command === 'venue-create' ? await tx`select app_private.operations_venue_create(${tx.json(payload as postgres.JSONValue)}) as dto`
         : command === 'venue-revoke' ? await tx`select app_private.operations_venue_revoke(${tx.json(payload as postgres.JSONValue)}) as dto`
         : command === 'venue-retry' ? await tx`select app_private.operations_venue_retry(${tx.json(payload as postgres.JSONValue)}) as dto`
+        : command === 'return-recommendations' ? await tx`select app_private.return_recommendations_get() as dto`
         : command === 'matching' ? await tx`select app_private.matching_get() as dto`
         : command === 'matching-resolve' ? await tx`select app_private.match_resolve(${tx.json(payload as postgres.JSONValue)}) as dto`
         : command === 'matching-monitor' ? await tx`select app_private.operations_matching_get() as dto`

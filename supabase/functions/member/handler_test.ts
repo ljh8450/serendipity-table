@@ -206,3 +206,15 @@ Deno.test('safety protects review/detail authority, actor DTO routes, clock and 
  assert((await handler(new Request('https://edge.example/member/safety'))).status===401);
  assert((await handler(new Request('https://edge.example/member/safety',{headers:{authorization:'Bearer valid',origin:'https://evil.example'}}))).status===403);
 });
+
+Deno.test('return recommendations are actor-only reads with no query or command surface',async()=>{
+ let called='';const h=createMemberHandler({authenticate:async()=> 'actor',execute:async(_a,c)=>{called=c;return {status:'NO_HISTORY',items:[]};}},[origin]);
+ const req=(p:string,m='GET')=>new Request('https://edge.example/member'+p,{method:m,headers:{authorization:'Bearer valid',origin}});
+ assert((await h(req('/return-recommendations'))).status===200&&called==='return-recommendations');
+ assert((await h(req('/return-recommendations?userId=other'))).status===422);
+ assert((await h(req('/return-recommendations?now=2099-01-01'))).status===422);
+ assert((await h(req('/return-recommendations','POST'))).status===405);
+ assert((await h(req('/return-recommendations/tick','POST'))).status===404);
+ assert((await h(new Request('https://edge.example/member/return-recommendations'))).status===401);
+ assert((await h(new Request('https://edge.example/member/return-recommendations',{headers:{authorization:'Bearer valid',origin:'https://evil.example'}}))).status===403);
+});

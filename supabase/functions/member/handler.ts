@@ -1,4 +1,4 @@
-export type MemberCommand = 'get' | 'profile' | 'consents' | 'intake' | 'identity' | 'onboarding' | 'draft' | 'reuse' | 'submit' | 'payment' | 'refund' | 'operations' | 'slot' | 'publish' | 'document' | 'matching' | 'matching-monitor' | 'matching-retry' | 'matching-resolve' | 'venues' | 'venue-create' | 'venue-revoke' | 'venue-retry' | 'chat-read' | 'chat-send' | 'chat-monitor' | 'chat-retry' | 'notifications' | 'notifications-read' | 'push-config' | 'push-subscribe' | 'push-unsubscribe' | 'push-test' | 'push-monitor' | 'push-retry' | 'content-monitor' | 'content-retry' | 'attendance' | 'attendance-check-in' | 'attendance-monitor' | 'attendance-review' | 'feedback' | 'feedback-submit' | 'feedback-monitor' | 'feedback-retry' | 'preferences' | 'preferences-save' | 'safety' | 'safety-submit' | 'safety-monitor' | 'safety-detail' | 'safety-review';
+export type MemberCommand = 'get' | 'profile' | 'consents' | 'intake' | 'identity' | 'onboarding' | 'draft' | 'reuse' | 'submit' | 'payment' | 'refund' | 'operations' | 'slot' | 'publish' | 'document' | 'matching' | 'matching-monitor' | 'matching-retry' | 'matching-resolve' | 'venues' | 'venue-create' | 'venue-revoke' | 'venue-retry' | 'chat-read' | 'chat-send' | 'chat-monitor' | 'chat-retry' | 'notifications' | 'notifications-read' | 'push-config' | 'push-subscribe' | 'push-unsubscribe' | 'push-test' | 'push-monitor' | 'push-retry' | 'content-monitor' | 'content-retry' | 'attendance' | 'attendance-check-in' | 'attendance-monitor' | 'attendance-review' | 'feedback' | 'feedback-submit' | 'feedback-monitor' | 'feedback-retry' | 'preferences' | 'preferences-save' | 'safety' | 'safety-submit' | 'safety-monitor' | 'safety-detail' | 'safety-review' | 'return-recommendations';
 export type MemberDependencies = {
   authenticate: (token: string) => Promise<string | null>;
   execute: (actor: string, command: MemberCommand, payload?: unknown) => Promise<unknown>;
@@ -35,14 +35,16 @@ export function createMemberHandler(deps: MemberDependencies, allowedOrigins: st
     const safetyPath = path.match(/\/member\/safety(?:\/(submit))?$/);
     const safetyOps = path.match(/\/member\/operations\/safety(?:\/(detail|review))?$/);
     const preferencesPath = path.match(/\/member\/preferences(?:\/(save))?$/);
+    const isRecommendations = path.endsWith('/member/return-recommendations');
     const isResolve = path.endsWith('/member/matching/resolve');
     const isMatching = path.endsWith('/member/matching');
     const isMonitor = path.endsWith('/member/operations/matching');
     const isRetry = path.endsWith('/member/operations/matching/retry');
     const isPayment = path.endsWith('/member/intake/payment');
     const isRefund = path.endsWith('/member/intake/refund');
-    if (!isRoot && !isConsents && !intakePath && !operationsPath && !isPayment && !isRefund && !isMatching && !isMonitor && !isRetry && !isResolve && !venuePath && !chatPath && !chatOperations && !notificationsPath && !pushPath && !pushOps && !contentOps && !attendancePath && !attendanceOps && !feedbackPath && !feedbackOps && !preferencesPath && !safetyPath && !safetyOps) return error('NOT_FOUND', 404);
-    const command: MemberCommand | undefined = isRoot && request.method === 'GET' ? 'get'
+    if (!isRecommendations && !isRoot && !isConsents && !intakePath && !operationsPath && !isPayment && !isRefund && !isMatching && !isMonitor && !isRetry && !isResolve && !venuePath && !chatPath && !chatOperations && !notificationsPath && !pushPath && !pushOps && !contentOps && !attendancePath && !attendanceOps && !feedbackPath && !feedbackOps && !preferencesPath && !safetyPath && !safetyOps) return error('NOT_FOUND', 404);
+    const command: MemberCommand | undefined = isRecommendations && request.method === 'GET' ? 'return-recommendations'
+      : isRoot && request.method === 'GET' ? 'get'
       : isRoot && request.method === 'PUT' ? 'profile'
       : isConsents && request.method === 'POST' ? 'consents'
       : intakePath && !intakePath[1] && request.method === 'GET' ? 'intake'
@@ -86,7 +88,7 @@ export function createMemberHandler(deps: MemberDependencies, allowedOrigins: st
       : operationsPath && !operationsPath[1] && request.method === 'GET' ? 'operations'
       : operationsPath?.[1] && request.method === 'POST' ? operationsPath[1] as MemberCommand : undefined;
     if (!command) {
-      headers.set('Allow', isRoot ? 'GET, PUT, OPTIONS' : ((safetyPath && !safetyPath[1]) || (safetyOps && !safetyOps[1]) || (preferencesPath && !preferencesPath[1])) ? 'GET, OPTIONS' : (feedbackPath && !feedbackPath[1]) || (feedbackOps && !feedbackOps[1]) ? 'GET, OPTIONS' : (attendancePath && !attendancePath[1]) || (attendanceOps && !attendanceOps[1]) ? 'GET, OPTIONS' : isMatching || isMonitor || (contentOps && !contentOps[1]) || (pushOps && !pushOps[1]) || (pushPath && !pushPath[1]) || (notificationsPath && !notificationsPath[1]) || (chatPath && !chatPath[2]) || (chatOperations && !chatOperations[1]) || (venuePath && !venuePath[1]) ? 'GET, OPTIONS' : operationsPath && !operationsPath[1] ? 'GET, OPTIONS' : intakePath && !intakePath[1] ? 'GET, OPTIONS'
+      headers.set('Allow', isRecommendations ? 'GET, OPTIONS' : isRoot ? 'GET, PUT, OPTIONS' : ((safetyPath && !safetyPath[1]) || (safetyOps && !safetyOps[1]) || (preferencesPath && !preferencesPath[1])) ? 'GET, OPTIONS' : (feedbackPath && !feedbackPath[1]) || (feedbackOps && !feedbackOps[1]) ? 'GET, OPTIONS' : (attendancePath && !attendancePath[1]) || (attendanceOps && !attendanceOps[1]) ? 'GET, OPTIONS' : isMatching || isMonitor || (contentOps && !contentOps[1]) || (pushOps && !pushOps[1]) || (pushPath && !pushPath[1]) || (notificationsPath && !notificationsPath[1]) || (chatPath && !chatPath[2]) || (chatOperations && !chatOperations[1]) || (venuePath && !venuePath[1]) ? 'GET, OPTIONS' : operationsPath && !operationsPath[1] ? 'GET, OPTIONS' : intakePath && !intakePath[1] ? 'GET, OPTIONS'
         : intakePath && ['identity','onboarding','draft'].includes(intakePath[1]) ? 'PUT, OPTIONS' : 'POST, OPTIONS');
       return error('METHOD_NOT_ALLOWED', 405);
     }
@@ -96,10 +98,10 @@ export function createMemberHandler(deps: MemberDependencies, allowedOrigins: st
       const actor = await deps.authenticate(token);
       if (!actor) return error('UNAUTHENTICATED', 401);
       let payload: unknown;
-      if ((feedbackPath || feedbackOps || preferencesPath || safetyPath || safetyOps) && parsedUrl.search) return error('VALIDATION_ERROR',422);
+      if ((isRecommendations || feedbackPath || feedbackOps || preferencesPath || safetyPath || safetyOps) && parsedUrl.search) return error('VALIDATION_ERROR',422);
       if (chatPath && (Array.from(parsedUrl.searchParams.keys()).some(k => k !== 'before') || parsedUrl.searchParams.getAll('before').length>1 || (command === 'chat-send' && parsedUrl.search))) return error('VALIDATION_ERROR',422);
       if (command === 'chat-read') payload = { roomId: chatPath![1], before: parsedUrl.searchParams.get('before') };
-      if (command !== 'get' && command !== 'intake' && command !== 'operations' && command !== 'matching' && command !== 'matching-monitor' && command !== 'venues' && command !== 'chat-read' && command !== 'chat-monitor' && command !== 'notifications' && command !== 'push-config' && command !== 'push-monitor' && command !== 'content-monitor' && command !== 'attendance' && command !== 'attendance-monitor' && command !== 'feedback' && command !== 'feedback-monitor' && command !== 'preferences' && command !== 'safety' && command !== 'safety-monitor') {
+      if (command !== 'return-recommendations' && command !== 'get' && command !== 'intake' && command !== 'operations' && command !== 'matching' && command !== 'matching-monitor' && command !== 'venues' && command !== 'chat-read' && command !== 'chat-monitor' && command !== 'notifications' && command !== 'push-config' && command !== 'push-monitor' && command !== 'content-monitor' && command !== 'attendance' && command !== 'attendance-monitor' && command !== 'feedback' && command !== 'feedback-monitor' && command !== 'preferences' && command !== 'safety' && command !== 'safety-monitor') {
         if (request.headers.get('content-type')?.split(';')[0].trim() !== 'application/json') return error('UNSUPPORTED_MEDIA_TYPE', 415);
         // Bound the actual stream, not just a caller-controlled Content-Length.
         const reader = request.body?.getReader();
