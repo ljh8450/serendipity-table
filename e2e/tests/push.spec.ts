@@ -35,7 +35,14 @@ test('push denial keeps inbox usable; private dispatcher and subscription author
   expect((await request.post(`${api}/push/test`, { headers, data: { userId: 'other' } })).status()).toBe(422)
   expect((await request.get(`${api}/operations/push`, { headers })).status()).toBe(403)
   expect((await request.post(`${api}/operations/push/retry`, { headers, data: { jobId: crypto.randomUUID() } })).status()).toBe(403)
-  expect((await request.post(`${data.apiUrl}/functions/v1/push-dispatch`, { headers, data: {} })).status()).toBe(401)
+  const dispatch = await request.post(`${data.apiUrl}/functions/v1/push-dispatch`, { headers, data: {} })
+  if (configDto.publicKey) {
+    expect(dispatch.status()).toBe(401)
+    expect(await dispatch.json()).toEqual({ error: 'UNAUTHENTICATED' })
+  } else {
+    expect(dispatch.status()).toBe(503)
+    expect(await dispatch.json()).toEqual({ error: 'NOT_CONFIGURED' })
+  }
   await page.route('**/member/push', route => route.abort('failed'))
   await settings.getByRole('button', { name: '푸시 설정 다시 확인' }).click()
   await expect(settings.getByRole('alert')).toContainText('푸시 설정을 불러오지 못했어요.')
