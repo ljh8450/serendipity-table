@@ -1,6 +1,6 @@
 # 운영 지표·시간 계측
 
-2026-10-18 · OP-04 · SQL045 · PRD3쪽 핵심 지표13개. 운영 서비스 미배포.
+2026-10-18 · OP-04 · SQL045 · PRD3쪽 핵심 지표13개. SQL047/member와 함께 운영 배포·원격 권한 검증 완료.
 
 `POST /member/operations/metrics`: operator_actor 필수. 본문 from(UTC ISO, 포함),to(미포함) 필수, slotId 선택. 기간/UUID/알려지지 않은 필드/query는422, GET405, 참가자403. 응답은 from,to,asOf,instrumentationSince,metrics[13],openSessions,completedSessions,myActiveSession이다. 각 metric은 id,label,numerator,denominator,value,unit,note,coverage만 반환한다. 분모0은null/N/A이며 PARTIAL/UNMEASURED를 숨기지 않는다. 개인정보/원문은 반환하지 않고 조회 감사를 남긴다.
 

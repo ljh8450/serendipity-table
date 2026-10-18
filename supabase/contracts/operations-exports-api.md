@@ -1,6 +1,6 @@
 # 운영 CSV 내보내기
 
-2026-10-18 · OP-03 · SQL044. `POST /member/operations/export`는 검증된 JWT→operator_actor를 사용한다. 참가자403·GET405·query422. 본문은 operations/explore의 적용 필터와 동일하되 page/id는 거부한다. 페이지 단위가 아니라 같은 정렬/필터의 단일 statement snapshot을 내보낸다. from(포함)/to(미포함)는 UTC ISO 문자열이며 목록과 동일한 at 기준이다. UI 입력은 KST→UTC 변환한다. 회원은 날짜 필드가 없으므로 기간 필터를 거부한다.
+2026-10-18 · OP-03 · SQL044 · SQL047/member와 함께 운영 배포·원격 권한 검증 완료. `POST /member/operations/export`는 검증된 JWT→operator_actor를 사용한다. 참가자403·GET405·query422. 본문은 operations/explore의 적용 필터와 동일하되 page/id는 거부한다. 페이지 단위가 아니라 같은 정렬/필터의 단일 statement snapshot을 내보낸다. from(포함)/to(미포함)는 UTC ISO 문자열이며 목록과 동일한 at 기준이다. UI 입력은 KST→UTC 변환한다. 회원은 날짜 필드가 없으므로 기간 필터를 거부한다.
 
 DTO: `{kind,columns,exportedAt,total,rows}`. columns는 종류별 코드 고정 허용 목록이며 rows는 해당 컬럼만 투영한다. 5,000건을 넘으면409 EXPORT_LIMIT로 전부 거부하며 조용히 잘라내지 않는다. UI는 회차/회원/검색 조건을 좁히도록 안내한다. 조회 시간은 exportedAt UTC, UI는 KST 표시·파일명에 UTC 시각을 포함한다. CSV 본문 날짜도 서버 UTC ISO를 보존한다.
 

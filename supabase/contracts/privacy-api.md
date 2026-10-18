@@ -1,6 +1,6 @@
 # 회원 탈퇴·보관/정리
 
-2026-10-18 · PRIV-002 · PRD11쪽16절 · SQL046~047. 로컬 구현이며 운영 SQL041에 미배포다. 보관 설계의 출처/적용 한계는 docs/context/decisions.md의 PRIV-002를 따른다.
+2026-10-18 · PRIV-002 · PRD11쪽16절 · SQL046~047. SQL047/member/privacy-dispatch와 서버 Cron 운영 배포·원격 권한 검증 완료. 실제 Auth soft/hard 정리 증거는 가상 로컬 계정 기준이다. 보관 설계의 출처/적용 한계는 docs/context/decisions.md의 PRIV-002를 따른다.
 
 ## 본인 명령
 

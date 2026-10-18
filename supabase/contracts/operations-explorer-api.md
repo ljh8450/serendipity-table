@@ -1,6 +1,6 @@
 # 운영 통합 조회 API
 
-2026-10-18 · OP-01 · SQL042. 로컬 구현이며 production SQL041과 구분한다.
+2026-10-18 · OP-01 · SQL042. SQL042~047/member production 반영·원격 rollback/운영 권한 smoke 검증 완료.
 
 `POST /member/operations/explore`는 검증된 JWT actor와 DB `operator_actor()`를 사용한다. 참가자는 403, 일반 공개 역할은 함수 EXECUTE와 뷰 SELECT 권한이 없다. 요청 query parameter는 422, GET은 405다. 응답은 no-store이며 조회마다 종류별 감사 기록을 남긴다. 도메인 상태를 변경하지 않는다.
 

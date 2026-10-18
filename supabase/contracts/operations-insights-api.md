@@ -1,6 +1,6 @@
 # 운영 피드백·사건 연결
 
-2026-10-18 · OP-02 · SQL043 · 로컬 전용 구현/검증. 운영 통합 조회 상세에 연결한다.
+2026-10-18 · OP-02 · SQL043 · 로컬 및 production 구현·권한 검증 완료. 운영 통합 조회 상세에 연결한다.
 
 `POST /member/operations/insights`: JWT→operator_actor 필수. 본문은 slotId 또는 tableId(UUID 문자열, 하나 이상), page(0~9999, 기본0)만 허용한다. 둘을 보내면 테이블이 해당 회차에 속해야 한다. 존재하지 않는 ID·잘못된 타입/관계/미허용필드/query는422, GET405, 참가자403다. 일반 역할 직접 EXECUTE는 금지하며 조회 감사 OPERATIONS_INSIGHTS_READ를 기록한다.
 
