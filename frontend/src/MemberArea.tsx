@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { createAuthClient, memberRequest } from './member-api'
@@ -7,8 +7,10 @@ import PushSettings from './PushSettings'
 import { disableDevicePush } from './push-api'
 import NotificationCenter from './NotificationCenter'
 import IntakeForms from './IntakeForms'
-import OperationsArea from './OperationsArea'
+const PrivacyPanel = lazy(() => import('./PrivacyPanel'))
+const OperationsArea = lazy(() => import('./OperationsArea'))
 import SafetyPanel from './SafetyPanel'
+import type { WithdrawalReceipt } from './PrivacyPanel'
 
 export default function MemberArea() {
   const [auth] = useState(createAuthClient)
@@ -19,6 +21,7 @@ export default function MemberArea() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [withdrawReceipt, setWithdrawReceipt] = useState<WithdrawalReceipt | null>(null)
   const [attempt, setAttempt] = useState(0)
   const [providers, setProviders] = useState({ google: false, kakao: false })
   const identity = useRef<string | null>(null)
@@ -34,6 +37,7 @@ export default function MemberArea() {
     const { data } = auth.auth.onAuthStateChange((_event, value) => {
       if (!active) return
       if (identity.current !== (value?.user.id ?? null)) { setMember(null); setNotice(''); identity.current = value?.user.id ?? null }
+      if (value?.user.id) setWithdrawReceipt(null)
       setSession(value); setInitializing(false)
     })
     fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/settings`, {
@@ -73,6 +77,7 @@ export default function MemberArea() {
     <h2 id="member-title">{session ? '나의 참가 준비' : mode === 'signup' ? '회원가입' : '로그인'}</h2>
     {error && <div role="alert" className="member-error"><p>{error}</p>{session && <button className="secondary" onClick={() => setAttempt(v => v + 1)}>다시 불러오기</button>}</div>}
     {notice && <p aria-live="polite">{notice}</p>}
+    {!session && withdrawReceipt && <div><p>접수 번호 {withdrawReceipt.receiptId} · 보관 기준 {withdrawReceipt.policyVersion} · 확인할 결제 신청 {withdrawReceipt.unresolvedFinancialApplications}건. 금융 권리 확인을 위해 접수 확인서를 보관해 주세요.</p><button className="secondary" onClick={() => { const url = URL.createObjectURL(new Blob([JSON.stringify(withdrawReceipt, null, 2)], { type: 'application/json' })); const link = document.createElement('a'); link.href = url; link.download = `dining-withdrawal-${withdrawReceipt.receiptId}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000) }}>탈퇴 접수 확인서 저장</button></div>}
     {initializing && <p>인증 상태를 확인하고 있어요.</p>}
     {!initializing && !session && <>
       <div className="intake-steps"><button type="button" className={mode === 'login' ? '' : 'secondary'} onClick={() => { setMode('login'); setError(''); setNotice('') }}>로그인 화면</button><button type="button" className={mode === 'signup' ? '' : 'secondary'} onClick={() => { setMode('signup'); setError(''); setNotice('') }}>회원가입 화면</button></div>
@@ -100,7 +105,7 @@ export default function MemberArea() {
         catch { setError('로그아웃하지 못했어요. 다시 시도해 주세요.') }
         finally { setBusy(false) }
       }}>로그아웃</button>
-      {member ? <><NotificationCenter key={`notifications-${member.userId}`} token={session.access_token} /><PushSettings key={`push-${member.userId}`} token={session.access_token} /><IntakeForms key={member.userId} token={session.access_token} member={member} onMemberChange={setMember} />{member.role === 'operator' && <OperationsArea key={`operations-${member.userId}`} token={session.access_token} />}</> : !error && <p>내 정보를 불러오고 있어요.</p>}
+      {member ? <><NotificationCenter key={`notifications-${member.userId}`} token={session.access_token} /><PushSettings key={`push-${member.userId}`} token={session.access_token} />{member.role === 'participant' && <Suspense fallback={<p>계정 관리 화면을 불러오고 있어요.</p>}><PrivacyPanel token={session.access_token} onWithdraw={async receipt => { await auth.auth.signOut({ scope: 'global' }).catch(() => {}); await auth.auth.signOut({ scope: 'local' }).catch(() => {}); setMember(null); setSession(null); setError(''); setWithdrawReceipt(receipt); setNotice('탈퇴를 처리했어요. 개인정보는 안내한 보관 기준에 따라 정리됩니다.') }} /></Suspense>}<IntakeForms key={member.userId} token={session.access_token} member={member} onMemberChange={setMember} />{member.role === 'operator' && <Suspense fallback={<p>운영 화면을 불러오고 있어요.</p>}><OperationsArea key={`operations-${member.userId}`} token={session.access_token} /></Suspense>}</> : !error && <p>내 정보를 불러오고 있어요.</p>}
     </>}
   </section>
 }

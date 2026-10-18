@@ -29,7 +29,18 @@ Deno.serve(createMemberHandler({
       await tx`set local role app_member_api`;
       await tx`set local statement_timeout = '5s'`;
       await tx`select set_config('app.actor_id', ${actor}, true)`;
-      const rows = command === 'safety' ? await tx`select app_private.safety_get() as dto`
+      await tx`select set_config('app.operation_name', ${command}, true),set_config('app.operation_payload', ${JSON.stringify(payload ?? {})}, true)`;
+      const rows = command === 'privacy-get' ? await tx`select app_private.privacy_get() as dto`
+        : command === 'privacy-withdraw' ? await tx`select app_private.privacy_withdraw(${tx.json(payload as postgres.JSONValue)}) as dto`
+        : command === 'privacy-monitor' ? await tx`select app_private.operations_privacy_get() as dto`
+        : command === 'privacy-retry' ? await tx`select app_private.operations_privacy_retry(${tx.json(payload as postgres.JSONValue)}) as dto`
+        : command === 'intake-start' ? await tx`select app_private.intake_start(${tx.json(payload as postgres.JSONValue)}) as dto`
+        : command === 'operations-metrics' ? await tx`select app_private.operations_metrics(${tx.json(payload as postgres.JSONValue)}) as dto`
+        : command === 'operations-work' ? await tx`select app_private.operations_work(${tx.json(payload as postgres.JSONValue)}) as dto`
+        : command === 'operations-export' ? await tx`select app_private.operations_export(${tx.json(payload as postgres.JSONValue)}) as dto`
+        : command === 'operations-insights' ? await tx`select app_private.operations_insights(${tx.json(payload as postgres.JSONValue)}) as dto`
+        : command === 'operations-explore' ? await tx`select app_private.operations_explore(${tx.json(payload as postgres.JSONValue)}) as dto`
+        : command === 'safety' ? await tx`select app_private.safety_get() as dto`
         : command === 'safety-submit' ? await tx`select app_private.safety_submit(${tx.json(payload as postgres.JSONValue)}) as dto`
         : command === 'safety-monitor' ? await tx`select app_private.operations_safety_get() as dto`
         : command === 'safety-detail' ? await tx`select app_private.operations_safety_detail(${tx.json(payload as postgres.JSONValue)}) as dto`

@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
+import { matchingRequest } from './matching-api'
 import { intakeRequest } from './intake-api'
 import type { Intake, Identity, Onboarding, ApplicationInput, Group } from './intake-api'
 import type { Member } from './member-api'
@@ -46,6 +47,12 @@ export default function IntakeForms({ token, member, onMemberChange }: { token: 
   const requestKey = useRef(crypto.randomUUID())
   const applicationHeading = useRef<HTMLHeadingElement>(null)
   const focusApplication = useRef(false)
+  const startSlots = JSON.stringify(input.slotIds)
+  useEffect(() => {
+    if (step === 2 && member.role === 'participant') {
+      void matchingRequest(token, '/intake/start', { requestKey: requestKey.current, slotIds: JSON.parse(startSlots) }).catch(() => { /* Measurement failure must not block the participant. */ })
+    }
+  }, [token, step, startSlots, member.role])
   useLayoutEffect(() => {
     if (focusApplication.current && step === 2 && applicationHeading.current) {
       applicationHeading.current.focus()

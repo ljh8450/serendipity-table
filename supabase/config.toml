@@ -425,3 +425,7 @@ verify_jwt = false
 # Mandatory private bearer is verified by the internal dispatcher.
 [functions.push-dispatch]
 verify_jwt = false
+
+# Private server bearer, fixed DB-selected targets; never a public deletion endpoint.
+[functions.privacy-dispatch]
+verify_jwt = false

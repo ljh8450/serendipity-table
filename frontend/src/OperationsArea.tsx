@@ -1,6 +1,10 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
+import type { SafetyCaseLink } from './OperationsInsights'
 import type { FormEvent } from 'react'
 import FeedbackMonitor from './FeedbackMonitor'
+const PrivacyMonitor = lazy(() => import('./PrivacyMonitor'))
+const OperationsMetrics = lazy(() => import('./OperationsMetrics'))
+const OperationsExplorer = lazy(() => import('./OperationsExplorer'))
 const SafetyMonitor = lazy(() => import('./SafetyMonitor'))
 import AttendanceMonitor from './AttendanceMonitor'
 import ContentMonitor from './ContentMonitor'
@@ -24,6 +28,7 @@ async function request(token: string, path = '', payload?: unknown): Promise<Ope
   return data
 }
 export default function OperationsArea({ token }: { token: string }) {
+  const [selectedSafetyCase, setSelectedSafetyCase] = useState<SafetyCaseLink | null>(null)
   const [data, setData] = useState<Operations | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -52,7 +57,10 @@ export default function OperationsArea({ token }: { token: string }) {
     {notice && <p role="status">{notice}</p>}
     {!data && !error && <p>운영 정보를 불러오고 있어요.</p>}
     {data && <>
-      <Suspense fallback={<p>안전 검토 화면을 불러오고 있어요.</p>}><SafetyMonitor token={token} /></Suspense><FeedbackMonitor token={token} /><AttendanceMonitor token={token} /><MatchingMonitor token={token} /><VenueOperations token={token} /><ChatMonitor token={token} /><PushMonitor token={token} /><ContentMonitor token={token} />
+      <Suspense fallback={<p>개인정보 정리 상태를 불러오고 있어요.</p>}><PrivacyMonitor token={token} /></Suspense>
+      <Suspense fallback={<p>운영 지표를 불러오고 있어요.</p>}><OperationsMetrics token={token} slots={data.slots} /></Suspense>
+      <Suspense fallback={<p>통합 조회를 불러오고 있어요.</p>}><OperationsExplorer token={token} onSafetyCase={setSelectedSafetyCase} /></Suspense>
+      <Suspense fallback={<p>안전 검토 화면을 불러오고 있어요.</p>}><SafetyMonitor token={token} selectedCase={selectedSafetyCase} /></Suspense><FeedbackMonitor token={token} /><AttendanceMonitor token={token} /><MatchingMonitor token={token} /><VenueOperations token={token} /><ChatMonitor token={token} /><PushMonitor token={token} /><ContentMonitor token={token} />
       <form onSubmit={createSlot}><h3>모집 초안 만들기</h3><p>모든 입력 시각은 한국 시각(KST)이에요. 모집 시작 → 마감 → 매칭 → 행사 순서로 입력해 주세요.</p>
         {(['opensAt','closesAt','matchesAt','startsAt'] as const).map((key, index) => <div key={key}><label htmlFor={`slot-${key}`}>{['모집 시작','모집 마감','매칭 실행','행사 시작'][index]} (KST)</label><input id={`slot-${key}`} name={key} type="datetime-local" required /></div>)}
         <label htmlFor="slot-region">모집 지역</label><select id="slot-region" name="regionCode"><option value="hongdae">홍대</option><option value="jamsil">잠실</option><option value="gangnam">강남</option><option value="jongno">을지로</option></select>

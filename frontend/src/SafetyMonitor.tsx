@@ -1,14 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
+import type { SafetyCaseLink } from './OperationsInsights'
 import { matchingRequest } from './matching-api'
 type Case = { caseType: string; caseId: string; kind: string; status: string; at: string }
 type Summary = { canReview: boolean; cases: Case[] }
 type Detail = { caseType: string; caseId: string; state: string; revision: number; details: string | null; status: string; actions: { action: string; reason: string; state: string; at: string }[] }
 const labels: Record<string,string> = { HARASSMENT:'불쾌·위협 행동',UNWANTED_CONTACT:'원하지 않는 연락',OTHER:'기타 신고',NO_SHOW:'확인된 노쇼',CANCELED_LATE:'당일·마감 후 취소',PENDING:'검토 대기',REVIEWED:'검토 완료',DISMISSED:'종결',CORRECTED:'참석·취소 정정됨',REVIEW:'검토 대상',ACTIVE:'참가 가능',WARNING:'경고',RESTRICTED:'참가 제한',BANNED:'영구 참가 제한',WARN:'경고 기록',RESTRICT:'참가 제한 적용',BAN:'영구 제한 적용',RESTORE:'참가 제한 해제',DISMISS:'신고 기각·종결' }
 const date=(s:string)=>new Date(s).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})
-export default function SafetyMonitor({token}:{token:string}){
+export default function SafetyMonitor({token,selectedCase}:{token:string;selectedCase?:SafetyCaseLink|null}){
  const [data,setData]=useState<Summary|null>(null),[detail,setDetail]=useState<Detail|null>(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false),[attempt,setAttempt]=useState(0)
  const pending=useRef<{body:string;key:string}|null>(null)
  useEffect(()=>{let active=true;matchingRequest<Summary>(token,'/operations/safety').then(d=>{if(active){setData(d);setError('')}}).catch(()=>{if(active){setDetail(null);setError('안전 검토 목록을 불러오지 못했어요. 권한과 연결을 확인해 주세요.')}});return()=>{active=false}},[token,attempt])
+ useEffect(()=>{
+  if(!selectedCase)return
+  let active=true
+  matchingRequest<Detail>(token,'/operations/safety/detail',selectedCase).then(d=>{if(active){setDetail(d);setError('');pending.current=null;const title=document.getElementById('safety-monitor-title');if(title){title.tabIndex=-1;title.focus();title.scrollIntoView({block:'start'})}}}).catch(()=>{if(active){setDetail(null);setError('사건을 불러오지 못했어요. 안전 검토 권한과 현재 사건 상태를 확인해 주세요.')}})
+  return()=>{active=false}
+ },[token,selectedCase])
  return <section aria-labelledby="safety-monitor-title"><h3 id="safety-monitor-title">안전 신고·참가 제한 검토</h3>
   <button type="button" className="secondary" disabled={busy} onClick={()=>{setDetail(null);setAttempt(v=>v+1)}}>안전 검토 새로고침</button>
   {error&&<p id="safety-review-error" role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}{!data&&!error&&<p>검토 목록을 확인하고 있어요.</p>}

@@ -1,5 +1,56 @@
 import { createMemberHandler } from './handler.ts';
 
+Deno.test('privacy routes require verified self/operator and never expose cleanup clock',async()=>{
+ const seen:string[]=[];const h=createMemberHandler({authenticate:async()=> 'verified',execute:async(actor,command)=>{assert(actor==='verified');seen.push(command);return {ok:true}}},[]);
+ for(const [path,method,command] of [['/privacy','GET','privacy-get'],['/privacy/withdraw','POST','privacy-withdraw'],['/operations/privacy','GET','privacy-monitor'],['/operations/privacy/retry','POST','privacy-retry']]){
+  const req=(suffix='')=>new Request(`https://edge.example/member${path}${suffix}`,{method,headers:{authorization:'Bearer valid','content-type':'application/json'},...(method==='POST'?{body:'{}'}:{})});
+  assert((await h(req())).status===200);assert(seen.at(-1)===command);assert((await h(req('?time=forged'))).status===422);
+ }
+ assert((await h(new Request('https://edge.example/member/privacy/tick',{headers:{authorization:'Bearer valid'}}))).status===404);assert(seen.length===4);
+});
+
+Deno.test('metrics/work/start routes preserve verified identity and reject caller clock', async()=>{
+ const seen:string[]=[];
+ const h=createMemberHandler({authenticate:async()=> 'verified',execute:async(actor,command)=>{assert(actor==='verified');seen.push(command);return {ok:true}}},[]);
+ for(const [path,command] of [['/operations/metrics','operations-metrics'],['/operations/work','operations-work'],['/intake/start','intake-start']]){
+  const req=(method='POST',suffix='')=>new Request(`https://edge.example/member${path}${suffix}`,{method,headers:{authorization:'Bearer valid','content-type':'application/json'},...(method==='POST'?{body:'{}'}:{})});
+  assert((await h(req())).status===200);assert(seen.at(-1)===command);assert((await h(req('GET'))).status===405);assert((await h(req('POST','?time=forged'))).status===422);
+ }
+ assert(seen.length===3);
+});
+
+Deno.test('CSV export is authenticated POST and maps bounded export failure', async () => {
+ const h=createMemberHandler({authenticate:async()=> 'operator',execute:async(actor,command)=>{assert(actor==='operator');assert(command==='operations-export');throw Error('EXPORT_LIMIT')}},[]);
+ const req=(method='POST',suffix='')=>new Request(`https://edge.example/member/operations/export${suffix}`,{method,headers:{authorization:'Bearer valid','content-type':'application/json'},...(method==='POST'?{body:'{"kind":"members"}'}:{})});
+ const response=await h(req());assert(response.status===409);assert((await response.json()).error.code==='EXPORT_LIMIT');assert((await h(req('GET'))).status===405);assert((await h(req('POST','?page=1'))).status===422);
+});
+
+Deno.test('operations insights requires scoped POST and verified actor', async () => {
+ let calls=0;
+ const h=createMemberHandler({authenticate:async()=> 'operator',execute:async(actor,command,payload)=>{
+  calls++;assert(actor==='operator');assert(command==='operations-insights');assert((payload as {tableId:string}).tableId==='table');return {cases:[]};
+ }},[]);
+ const req=(method='POST',suffix='')=>new Request(`https://edge.example/member/operations/insights${suffix}`,{method,headers:{authorization:'Bearer valid','content-type':'application/json'},...(method==='POST'?{body:'{"tableId":"table"}'}:{})});
+ assert((await h(req())).status===200);assert((await h(req('GET'))).status===405);assert((await h(req('POST','?time=forged'))).status===422);assert(calls===1);
+});
+
+Deno.test('operations explorer authenticates, bounds payload and rejects query actor overrides', async () => {
+ let calls=0;
+ const h=createMemberHandler({authenticate:async token=>token==='valid'?'verified-operator':null,execute:async(actor,command,payload)=>{
+  calls++;assert(actor==='verified-operator');assert(command==='operations-explore');assert((payload as {kind:string}).kind==='applications');return {items:[],page:0,pageSize:25,total:0};
+ }},['https://app.example']);
+ const req=(suffix='',method='POST',body='{"kind":"applications"}',token='valid')=>new Request(`https://edge.example/member/operations/explore${suffix}`,{method,headers:{authorization:`Bearer ${token}`,'content-type':'application/json'},...(method==='POST'?{body}:{})});
+ const response=await h(req());assert(response.status===200);assert(response.headers.get('cache-control')==='no-store');assert(calls===1);
+ assert((await h(req('?actorId=forged'))).status===422);
+ assert((await h(req('', 'GET'))).status===405);
+ assert((await h(req('', 'POST','{"kind":"applications"}','invalid'))).status===401);
+ assert((await h(req('', 'POST','bad json'))).status===422);
+ assert((await h(req('', 'POST','x'.repeat(17000)))).status===413);
+ assert(calls===1);
+ const forbidden=createMemberHandler({authenticate:async()=> 'participant',execute:async()=>{throw Error('FORBIDDEN')}},[]);
+ assert((await forbidden(req())).status===403);
+});
+
 function assert(value: unknown, message = 'Assertion failed'): asserts value { if (!value) throw new Error(message); }
 const origin = 'https://app.example';
 const request = (method = 'GET', body?: string, token = 'valid') => new Request('https://edge.example/member', {

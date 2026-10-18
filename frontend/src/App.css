@@ -22,3 +22,5 @@ select:focus-visible, textarea:focus-visible { outline: 3px solid #14513F; outli
 .help { font-size: 14px; color: #756B5E; margin-top: 0; }
 .previous-forms { padding: 16px 0; border-bottom: 1px solid #D9CFBC; }
 .previous-forms button { margin: 8px 8px 8px 0; }
+.operations-metrics form > *, .operations-explorer form > * { min-width: 0; max-width: 100%; }
+.operations-metrics input, .operations-metrics select, .operations-explorer input, .operations-explorer select { min-width: 0; max-width: 100%; }

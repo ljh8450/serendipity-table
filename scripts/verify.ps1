@@ -9,7 +9,7 @@ try {
         npm.cmd --prefix frontend run $task
         if ($LASTEXITCODE -ne 0) { throw "Frontend $task failed." }
     }
-    npm.cmd exec --yes --package=deno@2.9.6 -- deno check supabase/functions/system-status/index.ts supabase/functions/member/index.ts supabase/functions/push-dispatch/index.ts
+    npm.cmd exec --yes --package=deno@2.9.6 -- deno check supabase/functions/system-status/index.ts supabase/functions/member/index.ts supabase/functions/push-dispatch/index.ts supabase/functions/privacy-dispatch/index.ts
     if ($LASTEXITCODE -ne 0) { throw 'Edge typecheck failed.' }
     npm.cmd exec --yes --package=deno@2.9.6 -- deno test supabase/functions/
     if ($LASTEXITCODE -ne 0) { throw 'Edge tests failed.' }
@@ -21,6 +21,10 @@ try {
             Get-Content $sqlTest.FullName -Raw | docker exec -i supabase_db_serendipity-table psql -U postgres -d postgres -v ON_ERROR_STOP=1
             if ($LASTEXITCODE -ne 0) { throw "Database test failed: $($sqlTest.Name)" }
         }
+        node scripts/verify-privacy-local.mjs
+        if ($LASTEXITCODE -ne 0) { throw 'Privacy concurrency verification failed.' }
+        node scripts/verify-operations-local.mjs
+        if ($LASTEXITCODE -ne 0) { throw 'Operations concurrency verification failed.' }
         node scripts/verify-safety-local.mjs
         if ($LASTEXITCODE -ne 0) { throw 'Safety concurrency verification failed.' }
         node scripts/verify-preferences-local.mjs

@@ -6,6 +6,7 @@ import path from 'node:path'
 function fixture() { return JSON.parse(readFileSync(path.resolve('../.local/member-e2e.json'), 'utf8').replace(/^\uFEFF/, '')) }
 
 test('form intake separates identity/onboarding/application and reuses an owned application', async ({ page, request }) => {
+  const firstApplicationStarted=Date.now()
   const data = fixture()
   const user = data.users[0]
   await page.goto('/')
@@ -31,6 +32,7 @@ test('form intake separates identity/onboarding/application and reuses an owned 
   await expect(page.getByText('필수 동의를 저장했어요.')).toBeVisible()
   await page.getByRole('button', { name: '신청서 제출', exact: true }).click()
   await expect(page.getByText('신청서를 제출했어요. 결제 상태를 확인해 주세요. 매칭 확정은 아니에요.')).toBeVisible()
+  writeFileSync(path.resolve('../.local/first-application-timing.json'),JSON.stringify({durationMs:Date.now()-firstApplicationStarted,viewport:390,method:'automated UI login/profile/onboarding/consent/submit; not human usability acceptance'}))
   await page.getByRole('button', { name: '이 신청서 불러오기', exact: true }).click()
   await expect(page.getByRole('checkbox', { name: /홍대\/합정 · 로컬 테스트/ })).not.toBeChecked()
   await expect(page.getByLabel('참가권 선택 (필수)')).toHaveValue('single_v2')
