@@ -9,7 +9,7 @@ test('scoped mobile feedback and safety cases preserve candidate and reviewer bo
  const user=data.users[2],sql=readFileSync(path.resolve('../supabase/tests/operations_insights_permissions.sql'),'utf8').split('set local role app_member_api;')[0]
  db(sql+'commit;')
  try{
-  await page.goto('/');await page.getByLabel('이메일',{exact:true}).fill(user.email);await page.getByLabel('비밀번호',{exact:true}).fill(user.password);await page.getByRole('button',{name:'로그인',exact:true}).click()
+  await page.goto('/login');await page.getByLabel('이메일',{exact:true}).fill(user.email);await page.getByLabel('비밀번호',{exact:true}).fill(user.password);await page.getByRole('button',{name:'로그인',exact:true}).click()
   const panel=page.getByRole('region',{name:/^운영 통합 조회 ·/})
   await panel.getByLabel('조회 대상',{exact:true}).selectOption('tables');await panel.getByLabel('아이디·식별자·지역 검색').fill('OP01 TEST');await panel.getByRole('button',{name:'조건 적용',exact:true}).click()
   await panel.getByRole('button',{name:'테이블 상세 보기'}).click()

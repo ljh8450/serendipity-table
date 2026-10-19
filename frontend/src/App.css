@@ -32,3 +32,8 @@ select:focus-visible, textarea:focus-visible { outline: 3px solid #14513F; outli
 
 .next-action { display: inline-flex; align-items: center; min-height: 48px; padding: 8px 12px; color: #14513F; }
 .next-action:focus-visible { outline: 3px solid #14513F; outline-offset: 3px; }
+
+.auth-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 24px; }
+.auth-links a { display: inline-flex; align-items: center; min-height: 48px; color: #14513F; }
+.auth-links a:focus-visible, .auth-primary:focus-visible { outline: 3px solid #14513F; outline-offset: 3px; }
+.auth-primary { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 20px; background: #14513F; color: #FBF9F4; border-radius: 8px; text-decoration: none; font-weight: 600; }

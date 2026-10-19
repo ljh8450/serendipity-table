@@ -8,7 +8,7 @@ test('13 operator metrics expose denominators and server-only work time',async({
  if(f.apiUrl!=='http://127.0.0.1:54331')throw Error('Nonlocal fixture refused')
  const user=f.users[2],slot=db("select id from app_private.intake_event_slots order by starts_at limit 1")
  try{
-  await page.goto('/');await page.getByLabel('이메일',{exact:true}).fill(user.email);await page.getByLabel('비밀번호',{exact:true}).fill(user.password);await page.getByRole('button',{name:'로그인',exact:true}).click()
+  await page.goto('/login');await page.getByLabel('이메일',{exact:true}).fill(user.email);await page.getByLabel('비밀번호',{exact:true}).fill(user.password);await page.getByRole('button',{name:'로그인',exact:true}).click()
   const panel=page.getByRole('region',{name:'운영 대시보드 · 13개 지표',exact:true})
   await expect(panel.locator('article')).toHaveCount(13)
   await expect(panel.getByText('N/A · 미계측',{exact:true})).toBeVisible()

@@ -12,7 +12,7 @@ test('operator exception detail focuses the responsible privacy monitor without 
  // This subject has no Auth identity. EXCEPTION is never claimed by the worker.
  db(`insert into app_private.member_withdrawals(user_id,request_key,policy_version,financial_until,safety_until,audit_until) values('${subject}','${randomUUID()}','privacy-v1',now()+interval '1 year',now()+interval '1 year',now()+interval '1 year');insert into app_private.privacy_auth_jobs(id,user_id,kind,status,attempts) values('${job}','${subject}','SOFT_DELETE','EXCEPTION',5);`)
  try {
-  await page.goto('/');await page.getByLabel('이메일',{exact:true}).fill(data.users[2].email);await page.getByLabel('비밀번호',{exact:true}).fill(data.users[2].password);await page.getByRole('button',{name:'로그인',exact:true}).click()
+  await page.goto('/login');await page.getByLabel('이메일',{exact:true}).fill(data.users[2].email);await page.getByLabel('비밀번호',{exact:true}).fill(data.users[2].password);await page.getByRole('button',{name:'로그인',exact:true}).click()
   const panel=page.getByRole('region',{name:/^운영 통합 조회 ·/})
   await panel.getByLabel('조회 대상',{exact:true}).selectOption('exceptions')
   await panel.getByLabel('아이디·식별자·지역 검색').fill(job);await panel.getByRole('button',{name:'조건 적용',exact:true}).click()
@@ -30,7 +30,7 @@ test('operator mobile explorer preserves filters across linked details and fails
  const user=data.users[2]
  let fail=true
  await page.route('**/member/operations/explore',async route=>{if(fail){fail=false;await route.abort('failed')}else await route.continue()})
- await page.goto('/');await page.getByLabel('이메일',{exact:true}).fill(user.email);await page.getByLabel('비밀번호',{exact:true}).fill(user.password);await page.getByRole('button',{name:'로그인',exact:true}).click()
+ await page.goto('/login');await page.getByLabel('이메일',{exact:true}).fill(user.email);await page.getByLabel('비밀번호',{exact:true}).fill(user.password);await page.getByRole('button',{name:'로그인',exact:true}).click()
  const panel=page.getByRole('region',{name:/^운영 통합 조회 ·/})
  await expect(panel.getByRole('alert')).toBeVisible()
  await panel.getByRole('button',{name:'통합 조회 새로고침'}).click()

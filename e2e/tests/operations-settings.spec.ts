@@ -17,7 +17,7 @@ test('operator publishes matching policy and message versions while participant 
  const templates = await (await request.get(`${base}/templates`, { headers })).json()
  const original = templates.templates.find((t: { kind: string }) => t.kind === 'D1')
  try {
-  await page.goto('/'); await page.getByLabel('이메일', { exact: true }).fill(user.email); await page.getByLabel('비밀번호', { exact: true }).fill(user.password); await page.getByRole('button', { name: '로그인', exact: true }).click()
+  await page.goto('/login'); await page.getByLabel('이메일', { exact: true }).fill(user.email); await page.getByLabel('비밀번호', { exact: true }).fill(user.password); await page.getByRole('button', { name: '로그인', exact: true }).click()
   await expect(page.getByRole('region', { name: '운영 현황', exact: true }).getByText(/집계:/)).toBeVisible()
   await expect(page.getByLabel('현황 회차', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '모집 준비', exact: true }).click()

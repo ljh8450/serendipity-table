@@ -22,7 +22,7 @@ test('mobile participant and operator forms retain labels, targets and keyboard 
  test.setTimeout(60000)
  const f=JSON.parse(readFileSync(path.resolve('../.local/member-e2e.json'),'utf8'))
  if(f.apiUrl!=='http://127.0.0.1:54331')throw Error('Nonlocal fixture refused')
- await page.goto('/');await expect(page.getByLabel('이메일',{exact:true})).toBeVisible();await page.keyboard.press('Tab');expect(await page.evaluate(()=>getComputedStyle(document.activeElement!).outlineStyle)).not.toBe('none')
+ await page.goto('/login');await expect(page.getByLabel('이메일',{exact:true})).toBeVisible();await page.keyboard.press('Tab');expect(await page.evaluate(()=>getComputedStyle(document.activeElement!).outlineStyle)).not.toBe('none')
  await page.getByLabel('이메일',{exact:true}).fill(f.users[1].email);await page.getByLabel('비밀번호',{exact:true}).fill(f.users[1].password);await page.getByRole('button',{name:'로그인',exact:true}).click()
  await expect(page.getByRole('button',{name:'3. 회차 신청',exact:true})).toBeVisible()
  const checks:string[]=[]

@@ -9,7 +9,7 @@ test('form intake separates identity/onboarding/application and reuses an owned 
   const firstApplicationStarted=Date.now()
   const data = fixture()
   const user = data.users[0]
-  await page.goto('/')
+  await page.goto('/login')
   await page.getByLabel('이메일', { exact: true }).fill(user.email)
   await page.getByLabel('비밀번호', { exact: true }).fill(user.password)
   await page.getByRole('button', { name: '로그인', exact: true }).click()
@@ -105,12 +105,12 @@ test('form intake separates identity/onboarding/application and reuses an owned 
   expect((await request.get(`${data.apiUrl}/functions/v1/member/intake`)).status()).toBe(401)
 })
 
-test('email signup opens identity step and unconfigured social providers stay disabled', async ({ page }) => {
+test('email signup opens identity step and unconfigured social providers stay hidden', async ({ page }) => {
   const email = `signup-${randomUUID()}@example.test`
-  await page.goto('/')
-  await expect(page.getByRole('button', { name: 'Google로 계속하기 (연결 준비 중)' })).toBeDisabled()
-  await expect(page.getByRole('button', { name: '카카오로 계속하기 (연결 준비 중)' })).toBeDisabled()
-  await page.getByRole('button', { name: '회원가입 화면', exact: true }).click()
+  await page.goto('/login')
+  await expect(page.getByRole('button', { name: 'Google로 계속하기' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: '카카오로 계속하기' })).toHaveCount(0)
+  await page.getByRole('link', { name: '회원가입', exact: true }).click()
   await page.getByLabel('이메일', { exact: true }).fill(email)
   await page.getByLabel('비밀번호', { exact: true }).fill('LocalFixture-Only1!')
   await page.getByLabel('비밀번호 확인', { exact: true }).fill('Mismatch1!')

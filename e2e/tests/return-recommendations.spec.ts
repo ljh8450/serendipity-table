@@ -29,7 +29,7 @@ test('mobile next dining recommendations require explicit choice and preserve se
  try {
   let first=true
   await page.route('**/member/return-recommendations',async route=>{if(first){first=false;await route.abort('failed')}else await route.continue()})
-  await page.goto('/');await page.getByLabel('이메일',{exact:true}).fill(user.email);await page.getByLabel('비밀번호',{exact:true}).fill(user.password);await page.getByRole('button',{name:'로그인',exact:true}).click()
+  await page.goto('/login');await page.getByLabel('이메일',{exact:true}).fill(user.email);await page.getByLabel('비밀번호',{exact:true}).fill(user.password);await page.getByRole('button',{name:'로그인',exact:true}).click()
   const panel=page.getByRole('region',{name:'다음 식탁 추천',exact:true})
   await expect(panel.getByRole('alert')).toBeVisible()
   await panel.getByRole('button',{name:'다음 모집 새로고침',exact:true}).click()

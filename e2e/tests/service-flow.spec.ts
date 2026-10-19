@@ -9,7 +9,7 @@ test('participant and operator follow separated menus, preserve a draft and rest
   await page.getByLabel('비밀번호', { exact: true }).fill(f.users[index].password)
   await page.getByRole('button', { name: '로그인', exact: true }).click()
  }
- await page.goto('/')
+ await page.goto('/login')
  await login(1)
  await page.getByLabel('이름 (필수)', { exact: true }).fill('흐름 점검 임시 입력')
  expect(await page.locator('.page-nav a').evaluateAll(links => links.every(link => { const r = link.getBoundingClientRect(); return r.width >= 44 && r.height >= 44 }))).toBe(true)
