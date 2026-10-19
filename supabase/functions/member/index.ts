@@ -30,7 +30,12 @@ Deno.serve(createMemberHandler({
       await tx`set local statement_timeout = '5s'`;
       await tx`select set_config('app.actor_id', ${actor}, true)`;
       await tx`select set_config('app.operation_name', ${command}, true),set_config('app.operation_payload', ${JSON.stringify(payload ?? {})}, true)`;
-      const rows = command === 'privacy-get' ? await tx`select app_private.privacy_get() as dto`
+      const rows = command === 'overview-get' ? await tx`select app_private.operations_overview_get() as dto`
+        : command === 'templates-get' ? await tx`select app_private.operations_templates_get() as dto`
+        : command === 'templates-save' ? await tx`select app_private.operations_templates_save(${tx.json(payload as postgres.JSONValue)}) as dto`
+        : command === 'policy-get' ? await tx`select app_private.operations_policy_get() as dto`
+        : command === 'policy-save' ? await tx`select app_private.operations_policy_save(${tx.json(payload as postgres.JSONValue)}) as dto`
+        : command === 'privacy-get' ? await tx`select app_private.privacy_get() as dto`
         : command === 'privacy-withdraw' ? await tx`select app_private.privacy_withdraw(${tx.json(payload as postgres.JSONValue)}) as dto`
         : command === 'privacy-monitor' ? await tx`select app_private.operations_privacy_get() as dto`
         : command === 'privacy-retry' ? await tx`select app_private.operations_privacy_retry(${tx.json(payload as postgres.JSONValue)}) as dto`

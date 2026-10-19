@@ -28,6 +28,7 @@ jobs:
       - run: for test in supabase/tests/*.sql; do docker exec -i supabase_db_serendipity-table psql -U postgres -d postgres -v ON_ERROR_STOP=1 < "$test" || exit 1; done
       - run: node scripts/verify-privacy-local.mjs
       - run: node scripts/verify-operations-local.mjs
+      - run: node scripts/verify-policy-local.mjs
       - run: node scripts/verify-safety-local.mjs
       - run: node scripts/verify-preferences-local.mjs
       - run: node scripts/verify-feedback-local.mjs

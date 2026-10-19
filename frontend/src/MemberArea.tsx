@@ -7,12 +7,17 @@ import PushSettings from './PushSettings'
 import { disableDevicePush } from './push-api'
 import NotificationCenter from './NotificationCenter'
 import IntakeForms from './IntakeForms'
+import FeedbackPanel from './FeedbackPanel'
+import PersonPreferences from './PersonPreferences'
+import { PageNav } from './PageNav'
+import { usePage } from './usePage'
 const PrivacyPanel = lazy(() => import('./PrivacyPanel'))
 const OperationsArea = lazy(() => import('./OperationsArea'))
 import SafetyPanel from './SafetyPanel'
 import type { WithdrawalReceipt } from './PrivacyPanel'
 
 export default function MemberArea() {
+  const [page, navigate] = usePage(['apply', 'table', 'history', 'notifications', 'account', 'operations'], 'apply')
   const [auth] = useState(createAuthClient)
   const [session, setSession] = useState<Session | null>(null)
   const [member, setMember] = useState<Member | null>(null)
@@ -74,7 +79,7 @@ export default function MemberArea() {
   }
   if (!auth) return <section className="member-area"><h2>참가 준비</h2><p>로그인 연결을 준비하고 있어요. 공개 인증 설정을 확인해 주세요.</p></section>
   return <section className="member-area" aria-labelledby="member-title">
-    <h2 id="member-title">{session ? '나의 참가 준비' : mode === 'signup' ? '회원가입' : '로그인'}</h2>
+    <h2 id="member-title">{session ? member?.role === 'operator' ? '운영자 공간' : ({ apply: '식탁 신청', table: '내 식탁', history: '참가 이력', notifications: '알림', account: '계정 관리' } as Record<string,string>)[page] ?? '참가자 공간' : mode === 'signup' ? '회원가입' : '로그인'}</h2>
     {error && <div role="alert" className="member-error"><p>{error}</p>{session && <button className="secondary" onClick={() => setAttempt(v => v + 1)}>다시 불러오기</button>}</div>}
     {notice && <p aria-live="polite">{notice}</p>}
     {!session && withdrawReceipt && <div><p>접수 번호 {withdrawReceipt.receiptId} · 보관 기준 {withdrawReceipt.policyVersion} · 확인할 결제 신청 {withdrawReceipt.unresolvedFinancialApplications}건. 금융 권리 확인을 위해 접수 확인서를 보관해 주세요.</p><button className="secondary" onClick={() => { const url = URL.createObjectURL(new Blob([JSON.stringify(withdrawReceipt, null, 2)], { type: 'application/json' })); const link = document.createElement('a'); link.href = url; link.download = `dining-withdrawal-${withdrawReceipt.receiptId}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000) }}>탈퇴 접수 확인서 저장</button></div>}
@@ -97,7 +102,7 @@ export default function MemberArea() {
       {(!providers.google || !providers.kakao) && <p className="help">준비 중인 소셜 로그인은 OAuth 앱 연결이 완료되면 사용할 수 있어요.</p>}
     </>}
     {session && <>
-      <SafetyPanel key={`safety-${session.user.id}`} token={session.access_token} />
+
       {member?.username && <p>아이디: {member.username}</p>}
       <button type="button" className="secondary" disabled={busy} onClick={async () => {
         setBusy(true)
@@ -105,7 +110,15 @@ export default function MemberArea() {
         catch { setError('로그아웃하지 못했어요. 다시 시도해 주세요.') }
         finally { setBusy(false) }
       }}>로그아웃</button>
-      {member ? <><NotificationCenter key={`notifications-${member.userId}`} token={session.access_token} /><PushSettings key={`push-${member.userId}`} token={session.access_token} />{member.role === 'participant' && <Suspense fallback={<p>계정 관리 화면을 불러오고 있어요.</p>}><PrivacyPanel token={session.access_token} onWithdraw={async receipt => { await auth.auth.signOut({ scope: 'global' }).catch(() => {}); await auth.auth.signOut({ scope: 'local' }).catch(() => {}); setMember(null); setSession(null); setError(''); setWithdrawReceipt(receipt); setNotice('탈퇴를 처리했어요. 개인정보는 안내한 보관 기준에 따라 정리됩니다.') }} /></Suspense>}<IntakeForms key={member.userId} token={session.access_token} member={member} onMemberChange={setMember} />{member.role === 'operator' && <Suspense fallback={<p>운영 화면을 불러오고 있어요.</p>}><OperationsArea key={`operations-${member.userId}`} token={session.access_token} /></Suspense>}</> : !error && <p>내 정보를 불러오고 있어요.</p>}
+      {member ? <>
+        <PageNav current={member.role === 'operator' && !['account','notifications'].includes(page) ? 'operations' : page} onNavigate={navigate} items={member.role === 'operator' ? [['operations','운영 관리'],['notifications','알림'],['account','계정']] : [['apply','식탁 신청'],['table','내 식탁'],['history','참가 이력'],['notifications','알림'],['account','계정']]} />
+        {member.role === 'participant' && <IntakeForms key={member.userId} token={session.access_token} member={member} onMemberChange={setMember} view={page === 'table' ? 'table' : 'apply'} visible={page === 'apply' || page === 'table'} onNavigate={navigate} />}
+        {member.role === 'participant' && page === 'history' && <><p>지난 식탁의 평가와 비공개 사람 선택을 확인해 주세요. 다음 일정은 상단 식탁 신청에서 선택할 수 있어요.</p><FeedbackPanel token={session.access_token} /><PersonPreferences token={session.access_token} /><a className="next-action" href="#apply">다음 식탁 신청하기</a></>}
+        {page === 'notifications' && <><NotificationCenter token={session.access_token} operator={member.role === 'operator'} /><PushSettings token={session.access_token} /></>}
+        {page === 'account' && <><SafetyPanel token={session.access_token} />{member.role === 'participant' && <Suspense fallback={<p>계정 관리 화면을 불러오고 있어요.</p>}><PrivacyPanel token={session.access_token} onWithdraw={async receipt => { await auth.auth.signOut({ scope: 'global' }).catch(() => {}); await auth.auth.signOut({ scope: 'local' }).catch(() => {}); setMember(null); setSession(null); setError(''); setWithdrawReceipt(receipt); setNotice('탈퇴를 처리했어요. 개인정보는 안내한 보관 기준에 따라 정리됩니다.') }} /></Suspense>}</>}
+        {member.role === 'operator' && !['notifications','account'].includes(page) && <Suspense fallback={<p>운영 화면을 불러오고 있어요.</p>}><OperationsArea token={session.access_token} /></Suspense>}
+        {member.role === 'participant' && page === 'operations' && <p>운영 화면은 운영자 계정에서 사용할 수 있어요. 상단에서 식탁 신청을 선택해 주세요.</p>}
+      </> : !error && <p>내 정보를 불러오고 있어요.</p>}
     </>}
   </section>
 }

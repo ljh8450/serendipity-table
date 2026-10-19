@@ -22,6 +22,7 @@ test('scoped mobile feedback and safety cases preserve candidate and reviewer bo
   await expect(page.getByText('PRIVATE_REPORT_TEXT',{exact:true})).toHaveCount(0)
   await insights.getByRole('button',{name:'참석 후보 검토로 이동'}).click()
   await expect(page.getByRole('heading',{name:'참석·노쇼 후보 검토'})).toBeFocused()
+  await page.getByRole('button',{name:'현황·조회',exact:true}).click()
   // Grant only this disposable local operator; the server remains the authority.
   db(`insert into app_private.safety_reviewers(user_id) values('${user.id}')`)
   await insights.getByRole('button',{name:'집계 새로고침'}).click()
@@ -32,6 +33,7 @@ test('scoped mobile feedback and safety cases preserve candidate and reviewer bo
   const table=db("select md5('op01-table')::uuid"),other=db("select md5('op01-other-slot')::uuid")
   expect((await request.post(`${data.apiUrl}/functions/v1/member/operations/insights`,{headers,data:{tableId:table,slotId:other}})).status()).toBe(422)
   db(`delete from app_private.safety_reviewers where user_id='${user.id}'`)
+  await page.getByRole('button',{name:'현황·조회',exact:true}).click()
   await insights.getByRole('button',{name:'집계 새로고침'}).click()
   await expect(insights.getByRole('button',{name:'권한 있는 사건 상세로 연결'})).toHaveCount(0)
   await insights.screenshot({path:'../.local/operations-insights-mobile.png'})

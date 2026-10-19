@@ -23,3 +23,8 @@
 예외는 매칭·식당·방·콘텐츠·피드백·푸시의 현재 EXCEPTION 작업만 포함한다. 같은 outbox ID의 식당/방 실패는 domain으로 구분한다. 대기·정상 완료·취소·무효 테이블 자체를 실패로 합산하지 않는다. 조치는 기존 도메인 모니터와 기존 서버 명령을 사용한다. 새 통합 쓰기/재시도 명령을 만들지 않는다. 신고 검토와 노쇼 후보는 작업 실패와 구분해 OP-02에서 연결한다.
 
 검증: operations_explorer_permissions.sql(rollback), member handler 테스트, operations-explorer.spec.ts(실제 로컬 Auth/API·390/320px). 검증 결과와 한계는 docs/context/operations.md가 기준이다.
+
+## PRD11 completion (SQL052, 2026-10-18)
+Local implementation, not yet production deployed. GET /operations/overview: operator-only asOf and13 current-state whole-history counts; separate from period-scoped13rate metrics. Detailed member/application only: allowlisted gender/ageBand/MBTI/interests/attendance totals/current participation eligibility. Application detail includes chronological mock payment/refund ledger (IDs, original payment link, amount/outcome/reason/time; no request keys). Table detail adds aggregate explanation with no caller/peer private preference evaluation. FAILED/REFUND_FAILED applications appear in finance exception domain and link to application ledger; financial state is not changed by operator reads. Existing filters/CSV fields stay allowlisted. Safety source text remains exclusive to separately authorized reviewer.
+
+SQL053 adds latest100 per-slot snapshots and23 business counts, including pending choices, matching/venue/content/push/refund exceptions, KST same-day cancellation, pending no-show candidates and pending reports. Existing13rate metrics retain their definitions/denominators. Overview exposes aggregate report counts only, never report text or private preferences.

@@ -7,7 +7,7 @@ test('push denial keeps inbox usable; private dispatcher and subscription author
   if (data.apiUrl !== 'http://127.0.0.1:54331') throw new Error('Local only')
   const cdp = await page.context().newCDPSession(page)
   await cdp.send('Browser.setPermission', { permission: { name: 'notifications' }, setting: 'denied', origin: 'http://127.0.0.1:4173' })
-  await page.goto('/')
+  await page.goto('/#notifications')
   await page.getByLabel('이메일', { exact: true }).fill(data.users[1].email)
   await page.getByLabel('비밀번호', { exact: true }).fill(data.users[1].password)
   const auth = page.waitForResponse(r => r.url().includes('/auth/v1/token'))

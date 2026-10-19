@@ -33,6 +33,7 @@ begin
  insert into app_private.push_subscriptions(user_id,endpoint,p256dh,auth) values(md5('fdb-basic1user')::uuid,'https://fcm.googleapis.com/fcm/send/LOCAL_FEEDBACK_ONLY','B'||repeat('A',86),repeat('A',22));
  perform app_private.feedback_tick();perform app_private.feedback_tick();
  if (select count(*) from app_private.feedback_jobs where kind='REQUEST' and status='DONE')<>2 then raise exception 'request eligibility/uniqueness';end if;
+ if not exists(select 1 from jsonb_array_elements(app_private.notifications_get()->'notifications') n where n->>'kind'='FEEDBACK_REQUEST' and n->>'title'='식탁은 어떠셨나요? 평가를 남겨 주세요') then raise exception 'feedback notification title regressed';end if;
  if (select count(*) from app_private.member_notifications where kind='FEEDBACK_REQUEST')<>2 then raise exception 'request duplicate';end if;
  if not exists(select 1 from app_private.push_jobs p join app_private.member_notifications n on n.id=p.notification_id where n.kind='FEEDBACK_REQUEST') then raise exception 'push queue missing';end if;
  if exists(select 1 from app_private.feedback_jobs r join app_private.feedback_jobs q on q.assignment_id=r.assignment_id and q.kind='REQUEST' where r.kind='REMINDER' and r.due_at<>q.finished_at+interval '24 hours') then raise exception 'reminder timing';end if;

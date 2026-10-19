@@ -22,7 +22,7 @@ test('actual Cron opens a real shared chat; lost-response retry is unique and ca
  insert into app_private.payment_attempts(user_id,application_id,request_key,outcome,amount_krw) select user_id,id,gen_random_uuid(),'success',9900 from app_private.intake_applications where id in(${app},md5('${label}second')::uuid);
  select app_private.matching_tick();commit;`)
  const otherContext=await browser.newContext({baseURL:'http://127.0.0.1:4173',viewport:{width:390,height:844}}),otherPage=await otherContext.newPage()
- const login=async(p:typeof page,u:{email:string;password:string})=>{await p.goto('/');await p.getByLabel('이메일',{exact:true}).fill(u.email);await p.getByLabel('비밀번호',{exact:true}).fill(u.password);await p.getByRole('button',{name:'로그인',exact:true}).click()}
+ const login=async(p:typeof page,u:{email:string;password:string})=>{await p.goto('/#table');await p.getByLabel('이메일',{exact:true}).fill(u.email);await p.getByLabel('비밀번호',{exact:true}).fill(u.password);await p.getByRole('button',{name:'로그인',exact:true}).click()}
  const auth=async(u:{email:string;password:string})=>{const response=await request.post(`${data.apiUrl}/auth/v1/token?grant_type=password`,{headers:{apikey:data.publishableKey},data:{email:u.email,password:u.password}});return (await response.json()).access_token as string}
  try{
   const token=await auth(primary),secondToken=await auth(second),headers={authorization:`Bearer ${token}`}
@@ -48,6 +48,7 @@ test('actual Cron opens a real shared chat; lost-response retry is unique and ca
   await otherPage.getByLabel('보낼 메시지 (최대 1,000자)',{exact:true}).fill('함께할 식사가 기대돼요.')
   await otherPage.getByRole('button',{name:'메시지 전송',exact:true}).click()
   await expect(page.getByText('함께할 식사가 기대돼요.',{exact:true})).toBeVisible({timeout:10000})
+  await page.getByRole('link',{name:'알림',exact:true}).click()
   const inbox=page.getByRole('region',{name:/나의 알림/})
   await page.getByRole('button',{name:'알림 새로고침',exact:true}).click()
   await expect(inbox.getByText('식탁에 새 대화가 있어요',{exact:true})).toBeVisible()
@@ -62,6 +63,7 @@ test('actual Cron opens a real shared chat; lost-response retry is unique and ca
   await expect.poll(()=>db(`select count(*) from app_private.notification_receipts r join app_private.match_outbox o on o.id=r.event_id where o.aggregate_id in(select id from app_private.dining_tables where slot_id=${slot});`),{timeout:80000,intervals:[1500,2500]}).toBe('1')
   await expect(page.locator('body')).toHaveJSProperty('scrollWidth',390)
   await page.screenshot({path:'test-results/chat-mobile.png',fullPage:true})
+  await page.getByRole('link',{name:'내 식탁',exact:true}).click()
   await page.reload();await page.getByRole('button',{name:'단체방 열기',exact:true}).click()
   await expect(page.getByRole('list',{name:'대화 메시지'}).getByText(text,{exact:true})).toBeVisible()
   const outsiderToken=await auth(data.users[0])
@@ -82,11 +84,11 @@ test('actual Cron opens a real shared chat; lost-response retry is unique and ca
   await expect(page.getByText('현재 참여 중인 식탁의 방에만 접근할 수 있어요. 매칭 상태를 다시 확인해 주세요.',{exact:true})).toBeVisible({timeout:10000})
   await expect(page.getByRole('list',{name:'대화 메시지'})).toHaveCount(0)
  }finally{
-  await otherContext.close()
   db(`begin;delete from app_private.match_outbox where aggregate_id in(select id from app_private.dining_tables where slot_id=${slot}) or aggregate_id in(${fixtureApps});
    delete from app_private.allocation_attempts where application_id in(${fixtureApps});delete from app_private.table_assignments where application_id in(${fixtureApps});
    delete from app_private.dining_tables where slot_id=${slot};delete from app_private.match_runs where job_id in(select id from app_private.match_jobs where slot_id=${slot});delete from app_private.match_jobs where slot_id=${slot};
    delete from app_private.refund_attempts where application_id in(${fixtureApps});delete from app_private.payment_attempts where application_id in(${fixtureApps});delete from app_private.intake_applications where input->'slotIds' ? ${slot}::text;
    delete from app_private.intake_event_slots where id=${slot};delete from app_private.member_audit where actor_id in(${others});delete from app_private.member_accounts where user_id in(${others});delete from auth.users where id in(${others});commit;`)
+  await otherContext.close()
  }
 })

@@ -24,3 +24,11 @@ select:focus-visible, textarea:focus-visible { outline: 3px solid #14513F; outli
 .previous-forms button { margin: 8px 8px 8px 0; }
 .operations-metrics form > *, .operations-explorer form > * { min-width: 0; max-width: 100%; }
 .operations-metrics input, .operations-metrics select, .operations-explorer input, .operations-explorer select { min-width: 0; max-width: 100%; }
+.page-nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0; padding: 8px 0; border-bottom: 1px solid #D9CFBC; }
+.page-nav a { display: flex; align-items: center; justify-content: center; min-height: 48px; padding: 8px 12px; color: #14513F; border-radius: 8px; text-decoration: none; }
+.page-nav a[aria-current="page"] { background: #14513F; color: #FBF9F4; }
+.page-nav a:focus-visible { outline: 3px solid #14513F; outline-offset: 3px; }
+[hidden] { display: none !important; }
+
+.next-action { display: inline-flex; align-items: center; min-height: 48px; padding: 8px 12px; color: #14513F; }
+.next-action:focus-visible { outline: 3px solid #14513F; outline-offset: 3px; }

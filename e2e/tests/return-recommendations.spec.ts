@@ -24,8 +24,8 @@ test('mobile next dining recommendations require explicit choice and preserve se
  update app_private.table_assignments ta set occupied_at=tstzrange(s.starts_at,s.starts_at+interval '3 hours','[)') from app_private.dining_tables t join app_private.intake_event_slots s on s.id=t.slot_id where ta.table_id=t.id and t.slot_id=${slot};
  insert into app_private.event_feedback(assignment_id,user_id,request_key,ratings) select id,user_id,gen_random_uuid(),'{"atmosphere":5,"conversation":5,"venue":5,"revisit":true,"recommend":true}' from app_private.table_assignments where user_id='${user.id}' and application_id in(${apps});
  insert into app_private.intake_event_slots(id,starts_at,opens_at,closes_at,matches_at,region_code,region_label,published,capacity) values
- (${future},clock_timestamp()+interval '2 days',clock_timestamp()-interval '1 day',clock_timestamp()+interval '1 day',clock_timestamp()+interval '1 day','hongdae','추천 모바일 회차',true,24),
- (${later},clock_timestamp()+interval '3 days',clock_timestamp()-interval '1 day',clock_timestamp()+interval '1 day',clock_timestamp()+interval '1 day','hongdae','추천 다음 회차',true,24);commit;`)
+ (${future},clock_timestamp()+interval '2 days',clock_timestamp()-interval '1 day',clock_timestamp()+interval '1 day',clock_timestamp()+interval '1 day','hongdae','추천 모바일 회차 ${label}',true,24),
+ (${later},clock_timestamp()+interval '3 days',clock_timestamp()-interval '1 day',clock_timestamp()+interval '1 day',clock_timestamp()+interval '1 day','hongdae','추천 다음 회차 ${label}',true,24);commit;`)
  try {
   let first=true
   await page.route('**/member/return-recommendations',async route=>{if(first){first=false;await route.abort('failed')}else await route.continue()})
@@ -33,27 +33,27 @@ test('mobile next dining recommendations require explicit choice and preserve se
   const panel=page.getByRole('region',{name:'다음 식탁 추천',exact:true})
   await expect(panel.getByRole('alert')).toBeVisible()
   await panel.getByRole('button',{name:'다음 모집 새로고침',exact:true}).click()
-  await expect(panel.getByRole('button',{name:/이 일정으로 신청서 작성 · 추천 모바일 회차/})).toBeVisible()
+  await expect(panel.getByRole('button',{name:new RegExp(`이 일정으로 신청서 작성 · 추천 모바일 회차 ${label}`)})).toBeVisible()
   await expect(panel.getByText('다시 방문하고 싶다고 답한 식탁의 지역이에요.').first()).toBeVisible()
   const before=db(`select count(*) from app_private.intake_applications where user_id='${user.id}';`)
   const draftBefore=db(`select coalesce(jsonb_agg(to_jsonb(d)),'[]') from app_private.intake_drafts d where user_id='${user.id}';`)
   db(`update app_private.intake_event_slots set published=false where id=${future};`)
-  await panel.getByRole('button',{name:/이 일정으로 신청서 작성 · 추천 모바일 회차/}).click()
+  await panel.getByRole('button',{name:new RegExp(`이 일정으로 신청서 작성 · 추천 모바일 회차 ${label}`)}).click()
   await expect(panel.getByRole('alert')).toContainText('새로고침')
   db(`update app_private.intake_event_slots set published=true where id=${future};`)
   await panel.getByRole('button',{name:'다음 모집 새로고침',exact:true}).click()
-  await panel.getByRole('button',{name:/이 일정으로 신청서 작성 · 추천 모바일 회차/}).click()
+  await panel.getByRole('button',{name:new RegExp(`이 일정으로 신청서 작성 · 추천 모바일 회차 ${label}`)}).click()
   await expect(panel.getByRole('status')).toContainText('아직 신청·결제되지 않았어요.')
   await expect(page.getByRole('heading',{name:'이번 회차 신청',exact:true})).toBeFocused()
   const choices=page.getByRole('group',{name:'참가 가능한 일정·지역 (필수·복수 선택)',exact:true})
   await expect(choices.locator('input:checked')).toHaveCount(1)
-  await expect(choices.getByRole('checkbox',{name:/추천 모바일 회차/})).toBeChecked()
+  await expect(choices.getByRole('checkbox',{name:new RegExp(`추천 모바일 회차 ${label}`)})).toBeChecked()
   expect(db(`select count(*) from app_private.intake_applications where user_id='${user.id}';`)).toBe(before)
   expect(db(`select coalesce(jsonb_agg(to_jsonb(d)),'[]') from app_private.intake_drafts d where user_id='${user.id}';`)).toBe(draftBefore)
-  await panel.getByRole('button',{name:/이 일정으로 신청서 작성 · 추천 다음 회차/}).click()
+  await panel.getByRole('button',{name:new RegExp(`이 일정으로 신청서 작성 · 추천 다음 회차 ${label}`)}).click()
   await expect(page.getByRole('heading',{name:'이번 회차 신청',exact:true})).toBeFocused()
   await expect(choices.locator('input:checked')).toHaveCount(1)
-  await expect(choices.getByRole('checkbox',{name:/추천 다음 회차/})).toBeChecked()
+  await expect(choices.getByRole('checkbox',{name:new RegExp(`추천 다음 회차 ${label}`)})).toBeChecked()
   expect(await page.locator('body').evaluate(e=>e.scrollWidth)).toBeLessThanOrEqual(390)
   await panel.screenshot({path:'../.local/return-recommendations-mobile.png'})
   const auth=await request.post(`${data.apiUrl}/auth/v1/token?grant_type=password`,{headers:{apikey:data.publishableKey},data:{email:user.email,password:user.password}})

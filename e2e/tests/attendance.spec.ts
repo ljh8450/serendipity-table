@@ -21,7 +21,7 @@ test('mobile check-in retries once; actual end Cron creates candidates and opera
  insert into app_private.payment_attempts(user_id,application_id,request_key,outcome,amount_krw) values('${user.id}',${app},gen_random_uuid(),'success',9900);
  select app_private.matching_tick();
  update app_private.intake_event_slots set starts_at=clock_timestamp()+interval '10 minutes' where id=${slot};commit;`)
- const login = async (u: { email: string; password: string }) => { await page.goto('/'); await page.getByLabel('이메일',{exact:true}).fill(u.email); await page.getByLabel('비밀번호',{exact:true}).fill(u.password); await page.getByRole('button',{name:'로그인',exact:true}).click() }
+ const login = async (u: { email: string; password: string }) => { await page.goto('/#table'); await page.getByLabel('이메일',{exact:true}).fill(u.email); await page.getByLabel('비밀번호',{exact:true}).fill(u.password); await page.getByRole('button',{name:'로그인',exact:true}).click() }
  try {
   await login(user)
   const panel = page.getByRole('region',{name:'나의 참석',exact:true})
@@ -44,7 +44,7 @@ test('mobile check-in retries once; actual end Cron creates candidates and opera
   await expect.poll(() => db(`select count(*) from app_private.attendance_records where assignment_id in(${assignments}) and review_status='PENDING';`),{timeout:80000,intervals:[1500,2500]}).toBe('3')
   expect(Number(db(`select count(*) from cron.job_run_details d join cron.job j on j.jobid=d.jobid where j.jobname='serendipity-attendance-tick' and d.status='succeeded' and d.start_time>='${started}'::timestamptz;`))).toBeGreaterThan(0)
   expect(db(`select count(*) from app_private.intake_applications where id in(${apps}) and attendance_status='NO_SHOW';`)).toBe('0')
-  await page.getByRole('button',{name:'로그아웃',exact:true}).click(); await login(operator)
+  await page.getByRole('button',{name:'로그아웃',exact:true}).click(); await login(operator);await page.getByRole('button',{name:'안전·개인정보',exact:true}).click()
   const monitor = page.getByRole('region',{name:'참석·노쇼 후보 검토',exact:true})
   const form = monitor.locator('form').first()
   await form.getByLabel('확인 결과',{exact:true}).selectOption('NO_SHOW')

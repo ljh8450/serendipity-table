@@ -22,7 +22,7 @@ test('mobile private avoid survives lost response and actual Cron separates the 
   update app_private.intake_applications set attendance_status='ATTENDED' where input->'slotIds' ? ${slot}::text;
   update app_private.table_assignments ta set occupied_at=tstzrange(s.starts_at,s.starts_at+interval '3 hours','[)') from app_private.dining_tables t join app_private.intake_event_slots s on s.id=t.slot_id where ta.table_id=t.id and t.slot_id=${slot};commit;`)
  try{
-  await page.goto('/');await page.getByLabel('이메일',{exact:true}).fill(user.email);await page.getByLabel('비밀번호',{exact:true}).fill(user.password);await page.getByRole('button',{name:'로그인',exact:true}).click()
+  await page.goto('/#history');await page.getByLabel('이메일',{exact:true}).fill(user.email);await page.getByLabel('비밀번호',{exact:true}).fill(user.password);await page.getByRole('button',{name:'로그인',exact:true}).click()
   const panel=page.getByRole('region',{name:'참석 이력·비공개 사람 선택',exact:true})
   await expect(panel.getByRole('combobox')).toHaveCount(3)
   const select=panel.getByRole('combobox').first(),form=select.locator('..')

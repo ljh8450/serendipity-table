@@ -11,7 +11,7 @@ async function request(token: string, id?: string, signal?: AbortSignal): Promis
   if (!response.ok) throw new Error('알림을 확인하지 못했어요. 다시 시도해 주세요.')
   return response.json()
 }
-export default function NotificationCenter({ token }: { token: string }) {
+export default function NotificationCenter({ token, operator = false }: { token: string; operator?: boolean }) {
   const id = useId()
   const [data, setData] = useState<Inbox | null>(null)
   const [error, setError] = useState('')
@@ -28,7 +28,8 @@ export default function NotificationCenter({ token }: { token: string }) {
   }, [token, attempt])
   return <section className="intake-section" aria-labelledby={id}>
     <h3 id={id}>나의 알림{data ? ` · 읽지 않음 ${data.unreadCount}개` : ''}</h3>
-    <p className="help">매칭·장소·새 대화 안내를 확인해요. 최신 참가 상태는 아래 참가 현황에서 확인해 주세요.</p>
+    <p className="help">매칭·장소·새 대화 안내를 확인해요. {operator ? '처리 상태와 필요한 조치는 상단 운영 관리에서 확인해 주세요.' : '최신 참가 상태와 가능한 행동은 상단 내 식탁에서 확인해 주세요.'}</p>
+    <a className="next-action" href={operator ? '#operations' : '#table'}>{operator ? '운영 관리에서 처리 상태 확인' : '내 식탁에서 일정·장소 확인'}</a>
     <button className="secondary" disabled={busy} onClick={() => setAttempt(v => v + 1)}>알림 새로고침</button>
     {error && <p role="alert">{error}</p>}
     {!data && !error && <p role="status">알림을 불러오고 있어요.</p>}

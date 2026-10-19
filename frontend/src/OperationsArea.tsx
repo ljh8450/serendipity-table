@@ -7,10 +7,13 @@ const OperationsMetrics = lazy(() => import('./OperationsMetrics'))
 const OperationsExplorer = lazy(() => import('./OperationsExplorer'))
 const SafetyMonitor = lazy(() => import('./SafetyMonitor'))
 import AttendanceMonitor from './AttendanceMonitor'
+import OperationsOverview from './OperationsOverview'
+import MessageTemplates from './MessageTemplates'
 import ContentMonitor from './ContentMonitor'
 import PushMonitor from './PushMonitor'
 import ChatMonitor from './ChatMonitor'
 import VenueOperations from './VenueOperations'
+import MatchingPolicy from './MatchingPolicy'
 import MatchingMonitor from './MatchingMonitor'
 
 type Slot = { id: string; startsAt: string; closesAt: string; matchesAt: string | null; refundCutoffAt: string | null; regionLabel: string; capacity: number; published: boolean }
@@ -28,6 +31,23 @@ async function request(token: string, path = '', payload?: unknown): Promise<Ope
   return data
 }
 export default function OperationsArea({ token }: { token: string }) {
+  const [section, setSection] = useState('overview')
+  const [visited, setVisited] = useState(['overview'])
+  function openSection(value: string) { setSection(value); setVisited(previous => previous.includes(value) ? previous : [...previous, value]) }
+  useEffect(() => {
+    let observer: MutationObserver | undefined
+    let timeout: ReturnType<typeof setTimeout> | undefined
+    const move = (event: Event) => {
+      const id = (event as CustomEvent<string>).detail
+      const group = id.startsWith('privacy') || id.startsWith('attendance') || id.startsWith('safety') ? 'safety' : id.startsWith('venue') ? 'prepare' : id.startsWith('operations') ? 'overview' : 'automation'
+      openSection(group)
+      observer?.disconnect(); clearTimeout(timeout)
+      const focus = () => { const target = document.getElementById(id); if (target && target.getClientRects().length) { target.tabIndex = -1; target.focus(); target.scrollIntoView({ block: 'start' }); observer?.disconnect(); return true } return false }
+      observer = new MutationObserver(focus); observer.observe(document.body, { childList: true, subtree: true, attributes: true }); timeout = setTimeout(() => observer?.disconnect(), 10000); focus()
+    }
+    window.addEventListener('operations-monitor', move)
+    return () => { window.removeEventListener('operations-monitor', move); observer?.disconnect(); clearTimeout(timeout) }
+  }, [])
   const [selectedSafetyCase, setSelectedSafetyCase] = useState<SafetyCaseLink | null>(null)
   const [data, setData] = useState<Operations | null>(null)
   const [busy, setBusy] = useState(false)
@@ -52,15 +72,15 @@ export default function OperationsArea({ token }: { token: string }) {
     await run('/slot', { startsAt: time('startsAt'), opensAt: time('opensAt'), closesAt: time('closesAt'), matchesAt: time('matchesAt'), regionCode: fields.get('regionCode'), capacity: Number(fields.get('capacity')) }, '모집 초안을 만들었어요. 목록에서 확인 후 발행해 주세요.')
   }
   return <section className="member-area" aria-labelledby="operations-title">
-    <h2 id="operations-title">운영 모집·동의 설정</h2><p>모집·문서를 사전 설정하면 신청과 매칭은 서버 규칙으로 처리해요.</p>
+    <h2 id="operations-title">운영 관리</h2><nav className="intake-steps" aria-label="운영 메뉴">{[['overview','현황·조회'],['prepare','모집 준비'],['automation','자동화 점검'],['safety','안전·개인정보']].map(([id,label]) => <button key={id} type="button" className={section === id ? '' : 'secondary'} aria-current={section === id ? 'page' : undefined} onClick={() => openSection(id)}>{label}</button>)}</nav><p>모집·문서를 사전 설정하면 신청과 매칭은 서버 규칙으로 처리해요.</p>
     {error && <div role="alert"><p>{error}</p><button className="secondary" onClick={() => setAttempt(v => v + 1)}>운영 정보 다시 불러오기</button></div>}
     {notice && <p role="status">{notice}</p>}
     {!data && !error && <p>운영 정보를 불러오고 있어요.</p>}
     {data && <>
-      <Suspense fallback={<p>개인정보 정리 상태를 불러오고 있어요.</p>}><PrivacyMonitor token={token} /></Suspense>
-      <Suspense fallback={<p>운영 지표를 불러오고 있어요.</p>}><OperationsMetrics token={token} slots={data.slots} /></Suspense>
-      <Suspense fallback={<p>통합 조회를 불러오고 있어요.</p>}><OperationsExplorer token={token} onSafetyCase={setSelectedSafetyCase} /></Suspense>
-      <Suspense fallback={<p>안전 검토 화면을 불러오고 있어요.</p>}><SafetyMonitor token={token} selectedCase={selectedSafetyCase} /></Suspense><FeedbackMonitor token={token} /><AttendanceMonitor token={token} /><MatchingMonitor token={token} /><VenueOperations token={token} /><ChatMonitor token={token} /><PushMonitor token={token} /><ContentMonitor token={token} />
+      <div hidden={section !== 'overview'}>{visited.includes('overview') && <Suspense fallback={<p>현황을 불러오고 있어요.</p>}><OperationsOverview token={token} /><OperationsMetrics token={token} slots={data.slots} /><OperationsExplorer token={token} onSafetyCase={value => { setSelectedSafetyCase(value); openSection('safety') }} /></Suspense>}</div>
+      <div hidden={section !== 'safety'}>{visited.includes('safety') && <Suspense fallback={<p>검토 화면을 불러오고 있어요.</p>}><SafetyMonitor token={token} selectedCase={selectedSafetyCase} /><AttendanceMonitor token={token} /><PrivacyMonitor token={token} /></Suspense>}</div>
+      <div hidden={section !== 'automation'}>{visited.includes('automation') && <><p>정상 처리는 서버 예약 작업이 수행해요. 실패·재시도 소진과 조치가 필요한 항목을 확인해 주세요.</p><MatchingMonitor token={token} /><ChatMonitor token={token} /><PushMonitor token={token} /><ContentMonitor token={token} /><FeedbackMonitor token={token} /></>}</div>
+      <div hidden={section !== 'prepare'}>{visited.includes('prepare') && <><p>동의 전문·모집 시각·식당 재고·규칙·안내를 준비한 후 모집을 발행해 주세요.</p><MatchingPolicy token={token} /><VenueOperations token={token} /><MessageTemplates token={token} />
       <form onSubmit={createSlot}><h3>모집 초안 만들기</h3><p>모든 입력 시각은 한국 시각(KST)이에요. 모집 시작 → 마감 → 매칭 → 행사 순서로 입력해 주세요.</p>
         {(['opensAt','closesAt','matchesAt','startsAt'] as const).map((key, index) => <div key={key}><label htmlFor={`slot-${key}`}>{['모집 시작','모집 마감','매칭 실행','행사 시작'][index]} (KST)</label><input id={`slot-${key}`} name={key} type="datetime-local" required /></div>)}
         <label htmlFor="slot-region">모집 지역</label><select id="slot-region" name="regionCode"><option value="hongdae">홍대</option><option value="jamsil">잠실</option><option value="gangnam">강남</option><option value="jongno">을지로</option></select>
@@ -79,6 +99,7 @@ export default function OperationsArea({ token }: { token: string }) {
         <label className="check-label"><input type="checkbox" required />전문을 검토했으며 새 필수 동의로 공개하는 것을 확인합니다.</label><button disabled={busy}>필수 동의 발행</button>
       </form>
       <h3>동의 문서 이력</h3>{data.documents.length ? data.documents.map(doc => <details key={doc.id}><summary>{doc.title} · {doc.version} · {doc.active ? '현재 버전' : '이전 버전'}</summary><p className="policy-body">{doc.body}</p></details>) : <p>발행된 동의가 없어요. 두 종류의 전문을 준비해 주세요.</p>}
+    </>}</div>
     </>}
   </section>
 }

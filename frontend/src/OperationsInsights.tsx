@@ -19,7 +19,7 @@ export default function OperationsInsights({token,scope,onSafetyCase}:{token:str
    <p>연결 사건 {data.totalCases}건 · {data.page+1}페이지</p>{!data.cases.length&&<p>연결된 신고·참석 검토·마감 후 취소가 없어요.</p>}
    {data.cases.map(c=><div className="previous-forms" key={`${c.caseType}-${c.caseId}`}><p>{labels[c.caseType]} · {labels[c.status]??c.status} · {c.caseId}</p>
     {c.at&&<p>{new Date(c.at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})}</p>}
-    {c.status==='CANDIDATE'?<button className="secondary" onClick={()=>{const h=document.getElementById('attendance-monitor-title');if(h){h.tabIndex=-1;h.focus();h.scrollIntoView({block:'start'})}}}>참석 후보 검토로 이동</button>:data.canReviewSafety?<button className="secondary" onClick={()=>onSafetyCase({caseType:c.caseType,caseId:c.caseId})}>권한 있는 사건 상세로 연결</button>:<p>사건 원문과 조치는 별도 안전 검토 권한이 필요해요.</p>}
+    {c.status==='CANDIDATE'?<button className="secondary" onClick={()=>{window.dispatchEvent(new CustomEvent('operations-monitor',{detail:'attendance-monitor-title'}))}}>참석 후보 검토로 이동</button>:data.canReviewSafety?<button className="secondary" onClick={()=>onSafetyCase({caseType:c.caseType,caseId:c.caseId})}>권한 있는 사건 상세로 연결</button>:<p>사건 원문과 조치는 별도 안전 검토 권한이 필요해요.</p>}
    </div>)}
    <div className="intake-steps"><button className="secondary" disabled={!page} onClick={()=>{setPage(v=>v-1);setData(null)}}>이전 사건 페이지</button><button className="secondary" disabled={(page+1)*data.pageSize>=data.totalCases} onClick={()=>{setPage(v=>v+1);setData(null)}}>다음 사건 페이지</button></div>
   </>}

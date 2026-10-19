@@ -269,3 +269,22 @@ Deno.test('return recommendations are actor-only reads with no query or command 
  assert((await h(new Request('https://edge.example/member/return-recommendations'))).status===401);
  assert((await h(new Request('https://edge.example/member/return-recommendations',{headers:{authorization:'Bearer valid',origin:'https://evil.example'}}))).status===403);
 });
+
+Deno.test('operator policy, templates and overview enforce methods, CORS, query bounds and conflicts',async()=>{
+ let called='';let fail='';
+ const h=createMemberHandler({authenticate:async()=> 'actor',execute:async(_a,c)=>{called=c;if(fail)throw Error(fail);return {}; }},[origin]);
+ const req=(p:string,m='GET',body?:string)=>new Request('https://edge.example/member'+p,{method:m,headers:{authorization:'Bearer valid',origin,'content-type':'application/json'},body});
+ for(const [path,command] of [['policy','policy'],['templates','templates']]){
+  assert((await h(req('/operations/'+path))).status===200&&called===command+'-get');
+  assert((await h(req('/operations/'+path,'POST','{}'))).status===200&&called===command+'-save');
+  assert((await h(req('/operations/'+path+'?actor=other'))).status===422);
+  assert((await h(req('/operations/'+path,'PUT','{}'))).status===405);
+  fail='FORBIDDEN';assert((await h(req('/operations/'+path))).status===403);
+  fail='JOB_CONFLICT';assert((await h(req('/operations/'+path,'POST','{}'))).status===409);fail='';
+ }
+ assert((await h(req('/operations/overview'))).status===200&&called==='overview-get');
+ assert((await h(req('/operations/overview','POST','{}'))).status===405);
+ assert((await h(req('/operations/overview?now=future'))).status===422);
+ assert((await h(new Request('https://edge.example/member/operations/policy'))).status===401);
+ assert((await h(new Request('https://edge.example/member/operations/templates',{headers:{authorization:'Bearer valid',origin:'https://evil.example'}}))).status===403);
+});

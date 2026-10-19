@@ -22,7 +22,7 @@ test('operator registers a verified reservation, actual Cron allocates and only 
  select app_private.matching_tick();commit;`)
  const login=async(u:{email:string;password:string})=>{await page.getByLabel('이메일',{exact:true}).fill(u.email);await page.getByLabel('비밀번호',{exact:true}).fill(u.password);await page.getByRole('button',{name:'로그인',exact:true}).click()}
  try{
-  await page.goto('/admin');await login(operator)
+  await page.goto('/admin');await login(operator);await page.getByRole('button',{name:'모집 준비',exact:true}).click()
   await expect(page.getByRole('heading',{name:'식당 재고·자동 배정',exact:true})).toBeVisible()
   const form=page.getByRole('group',{name:'확인된 예약 재고 등록',exact:true})
   await form.getByLabel('배정 회차 (필수)',{exact:true}).selectOption(db(`select ${slot};`))
@@ -50,7 +50,7 @@ test('operator registers a verified reservation, actual Cron allocates and only 
   expect(JSON.stringify(dto)).not.toMatch(/safeAllergies|verificationNote|reviewUrl|birthYear/)
   expect((await request.get(`${data.apiUrl}/functions/v1/member/operations/venues`,{headers})).status()).toBe(403)
   expect((await request.post(`${data.apiUrl}/functions/v1/member/operations/venues/create`,{headers,data:{}})).status()).toBe(403)
-  await page.getByRole('button',{name:'로그아웃',exact:true}).click();await login(user)
+  await page.getByRole('button',{name:'로그아웃',exact:true}).click();await login(user);await page.getByRole('link',{name:'내 식탁',exact:true}).click()
   await expect(page.getByText('식당: LOCAL VENUE E2E',{exact:true})).toBeVisible()
   await expect(page.getByRole('link',{name:'식당 지도 보기',exact:true})).toHaveAttribute('href','https://example.test/map')
   await expect(page.locator('body')).toHaveJSProperty('scrollWidth',390)

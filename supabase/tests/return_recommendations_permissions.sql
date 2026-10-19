@@ -43,6 +43,11 @@ begin
  select count(*) into count_before from app_private.intake_applications;
  dto:=app_private.return_recommendations_get();
  if dto->>'status'<>'AVAILABLE' or jsonb_array_length(dto->'items')<>5 or dto#>>'{items,0,id}'<>md5('return-slot1')::uuid::text then raise exception 'fallback rank or limit';end if;
+ -- An explicitly selected weekday/hour outranks an earlier nonmatching date.
+ update app_private.intake_event_slots set starts_at=(select starts_at+interval '7 days' from app_private.intake_event_slots where id=s) where id=md5('return-slot5')::uuid;
+ dto:=app_private.return_recommendations_get();
+ if dto#>>'{items,0,id}'<>md5('return-slot5')::uuid::text or dto#>>'{items,0,datePreference}'<>'true' then raise exception 'date preference ranking';end if;
+ update app_private.intake_event_slots set starts_at=clock_timestamp()+interval '6 days' where id=md5('return-slot5')::uuid;
  insert into app_private.event_feedback(assignment_id,user_id,request_key,ratings)values(ta,actor,gen_random_uuid(),'{"atmosphere":5,"conversation":5,"venue":5,"revisit":true,"recommend":true}');
  dto:=app_private.return_recommendations_get();
  if dto#>>'{items,0,id}'<>md5('return-slot2')::uuid::text or dto#>>'{items,0,reason}'<>'POSITIVE_EXPERIENCE' then raise exception 'own feedback rank';end if;
@@ -56,7 +61,7 @@ begin
  dto:=app_private.return_recommendations_get();
  if exists(select 1 from jsonb_array_elements(dto->'items')x where x->>'id' in(select md5('return-slot'||i)::uuid::text from generate_series(6,9)i)) then raise exception 'unavailable slot leaked';end if;
  if (select count(*) from app_private.intake_applications)<>count_before then raise exception 'read performed application write';end if;
- if (select count(*) from jsonb_object_keys(dto))<>2 or exists(select 1 from jsonb_array_elements(dto->'items')x where (select count(*) from jsonb_object_keys(x))<>6) then raise exception 'DTO shape';end if;
+ if (select count(*) from jsonb_object_keys(dto))<>2 or exists(select 1 from jsonb_array_elements(dto->'items')x where (select count(*) from jsonb_object_keys(x))<>7) then raise exception 'DTO shape';end if;
  -- No submitted duplicate; no overlapping active assignment.
  update app_private.intake_applications set input=jsonb_set(input,'{slotIds}',input->'slotIds'||jsonb_build_array(md5('return-slot2')::uuid)) where user_id=actor;
  dto:=app_private.return_recommendations_get();

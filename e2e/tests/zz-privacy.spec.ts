@@ -17,7 +17,7 @@ test('soft withdrawal revokes app/session rights and real server Cron cleans Aut
  try{
   const login=await request.post(`${api}/auth/v1/token?grant_type=password`,{headers:{apikey:local.PUBLISHABLE_KEY},data:{email,password}})
   const session=await login.json(),headers={Authorization:`Bearer ${session.access_token}`}
-  await page.goto('/');await page.getByLabel('이메일',{exact:true}).fill(email);await page.getByLabel('비밀번호',{exact:true}).fill(password);await page.getByRole('button',{name:'로그인',exact:true}).click()
+  await page.goto('/#account');await page.getByLabel('이메일',{exact:true}).fill(email);await page.getByLabel('비밀번호',{exact:true}).fill(password);await page.getByRole('button',{name:'로그인',exact:true}).click()
   const panel=page.getByRole('region',{name:'회원 탈퇴·개인정보 보관',exact:true})
   await panel.getByText('탈퇴와 보관 기준 확인',{exact:true}).click()
   await expect(panel.getByText(/확인이 필요한 결제 신청 0건/)).toBeVisible()

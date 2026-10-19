@@ -23,7 +23,7 @@ test('mobile report separates immediately; privileged review restricts participa
   select app_private.matching_tick();select app_private.chat_tick();commit;`)
  const original=db(`select jsonb_build_object('exists',exists(select 1 from app_private.safety_accounts where user_id=a.user_id),'state',coalesce((select state from app_private.safety_accounts where user_id=a.user_id),'ACTIVE'),'revision',coalesce((select revision from app_private.safety_accounts where user_id=a.user_id),0)) from app_private.member_accounts a where user_id='${target.id}';`)
  const originalState=JSON.parse(original)
- const login=async(u:{email:string;password:string})=>{await page.goto('/');const out=page.getByRole('button',{name:'로그아웃',exact:true});if(await out.count())await out.click();await page.getByLabel('이메일',{exact:true}).fill(u.email);await page.getByLabel('비밀번호',{exact:true}).fill(u.password);await page.getByRole('button',{name:'로그인',exact:true}).click()}
+ const login=async(u:{email:string;password:string})=>{await page.goto('/#account');const out=page.getByRole('button',{name:'로그아웃',exact:true});if(await out.count())await out.click();await page.getByLabel('이메일',{exact:true}).fill(u.email);await page.getByLabel('비밀번호',{exact:true}).fill(u.password);await page.getByRole('button',{name:'로그인',exact:true}).click()}
  const auth=async(u:{email:string;password:string})=>{const r=await request.post(`${data.apiUrl}/auth/v1/token?grant_type=password`,{headers:{apikey:data.publishableKey},data:{email:u.email,password:u.password}});return(await r.json()).access_token}
  try{
   const ownId=db(`select id from app_private.table_assignments where application_id=md5('${label}1app')::uuid;`),peerId=db(`select id from app_private.table_assignments where application_id=md5('${label}2app')::uuid;`)
@@ -62,7 +62,7 @@ test('mobile report separates immediately; privileged review restricts participa
   expect((await request.post(api+'/safety/submit',{headers:headers(reporterToken),data:{assignmentId:ownId,peerId,requestKey:randomUUID(),kind:'BLOCK',userId:target.id}})).status()).toBe(422)
   const alienToken=await auth(data.users[0])
   expect((await request.post(api+'/safety/submit',{headers:headers(alienToken),data:{assignmentId:ownId,peerId,requestKey:randomUUID(),kind:'BLOCK'}})).status()).toBe(403)
-  await login(operator)
+  await login(operator);await page.getByRole('link',{name:'운영 관리',exact:true}).click();await page.getByRole('button',{name:'안전·개인정보',exact:true}).click()
   const monitor=page.getByRole('region',{name:'안전 신고·참가 제한 검토',exact:true})
   await expect(monitor.getByText('사건 요약만 볼 수 있어요. 원문 조회와 조치는 별도의 안전 검토 권한이 필요해요.',{exact:true})).toBeVisible()
   db(`insert into app_private.safety_reviewers(user_id) values('${operator.id}');`)
@@ -86,12 +86,13 @@ test('mobile report separates immediately; privileged review restricts participa
   expect(submit.status()).toBe(403)
   await login(target)
   await expect(panel.getByText('내 상태: 참가 제한',{exact:true})).toBeVisible()
+  await page.getByRole('link',{name:'내 식탁',exact:true}).click()
   const matching=page.getByRole('region',{name:'나의 매칭 상태',exact:true})
   const resolve=matching.getByRole('form',{name:'신청 해결 선택',exact:true})
   await resolve.getByLabel('처리 방법',{exact:true}).selectOption('refund')
   await resolve.getByRole('checkbox').check();await resolve.getByRole('button',{name:'선택한 처리 실행',exact:true}).click()
   await expect.poll(()=>db(`select payment_status from app_private.intake_applications where id=md5('${label}2app')::uuid;`)).toBe('REFUNDED')
-  await login(operator);await monitor.getByRole('button',{name:`사건 상세 확인 ${reportId.slice(0,8)}`,exact:true}).click()
+  await login(operator);await page.getByRole('link',{name:'운영 관리',exact:true}).click();await page.getByRole('button',{name:'안전·개인정보',exact:true}).click();await monitor.getByRole('button',{name:`사건 상세 확인 ${reportId.slice(0,8)}`,exact:true}).click()
   await actionForm.getByLabel('조치 선택',{exact:true}).selectOption('RESTORE');await actionForm.getByLabel('조치 사유 (5~500자, 내부 기록)',{exact:true}).fill('LOCAL 검토 후 참가 제한 해제')
   await actionForm.getByRole('checkbox').check();await actionForm.getByRole('button',{name:'안전 조치 저장',exact:true}).click();await expect(monitor.getByText('참가 상태: 참가 가능 · 검토 완료',{exact:true})).toBeVisible()
   expect(db(`select payment_status from app_private.intake_applications where id=md5('${label}2app')::uuid;`)).toBe('REFUNDED')

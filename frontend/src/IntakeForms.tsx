@@ -32,7 +32,7 @@ function Choices({ group, selected, onChange, error }: { group: Group; selected:
   </fieldset>
 }
 
-export default function IntakeForms({ token, member, onMemberChange }: { token: string; member: Member; onMemberChange: (member: Member) => void }) {
+export default function IntakeForms({ token, member, onMemberChange, view = 'apply', visible = true, onNavigate }: { view?: 'apply' | 'table'; visible?: boolean; onNavigate?: (page: string) => void; token: string; member: Member; onMemberChange: (member: Member) => void }) {
   const [data, setData] = useState<Intake | null>(null)
   const [identity, setIdentity] = useState<Identity>({ name: member.displayName ?? member.profile?.name ?? '', contact: member.profile?.contact ?? '' })
   const [onboarding, setOnboarding] = useState<Onboarding>(() => ({ ...emptyOnboarding(), birthYear: member.profile?.birthYear ?? '', occupation: member.profile?.occupation ?? '', avoidedFoods: member.profile?.avoidedFoods.join(', ') ?? '', allergies: member.profile?.allergies.join(', ') ?? '' }))
@@ -94,14 +94,18 @@ export default function IntakeForms({ token, member, onMemberChange }: { token: 
     if (!input.slotIds.length) missing.slots = '실제 참석 가능한 일정·지역 조합을 선택해 주세요.'
     setFieldErrors(missing)
     if (Object.keys(missing).length) return
-    await run(async () => {
+    const submitted = await run(async () => {
       const saved = await intakeRequest(token, '/draft', { input, sourceId })
       return intakeRequest(token, '/submit', { requestKey: requestKey.current, draftRevision: saved.draft!.revision })
     }, '신청서를 제출했어요. 결제 상태를 확인해 주세요. 매칭 확정은 아니에요.')
+    if (submitted) requestAnimationFrame(() => { const heading = document.getElementById('application-history-title'); heading?.focus(); heading?.scrollIntoView({ block: 'start' }) })
   }
-  if (!data) return <div>{error ? <><p role="alert">{error}</p><button onClick={() => setAttempt(v => v + 1)}>다시 불러오기</button></> : <p>가입·온보딩 정보를 불러오고 있어요.</p>}</div>
+  if (!data) return <div hidden={!visible}>{error ? <><p role="alert">{error}</p><button onClick={() => setAttempt(v => v + 1)}>다시 불러오기</button></> : <p>가입·온보딩 정보를 불러오고 있어요.</p>}</div>
   const regionGroup = data.groups.find(group => group.key === 'regions')!
-  return <div>
+  return <div hidden={!visible}>
+    <div hidden={view !== 'apply'}>
+    <p>기본정보·온보딩 → 일정 선택·동의 → 신청·결제 순서로 준비해 주세요. 결제 후 내 식탁에서 진행 상태를 확인할 수 있어요.</p>
+    {data.applications.length > 0 && <section aria-label="최근 신청 요약"><h3>최근 신청</h3>{[...data.applications].sort((a,b) => b.submittedAt.localeCompare(a.submittedAt)).slice(0,1).map(a => <p key={a.id}>신청 상태: {applicationLabels[a.applicationStatus] ?? '확인 필요'} / 결제: {paymentLabels[a.paymentStatus] ?? '확인 필요'} / 매칭: {matchingLabels[a.matchingStatus] ?? '확인 필요'}</p>)}<button type="button" className="secondary" onClick={() => onNavigate?.('table')}>신청 진행 상태와 다음 행동 확인</button></section>}
     <Suspense fallback={<p>다음 식탁 추천을 불러오고 있어요.</p>}><ReturnRecommendations token={token} onSelect={async slot => {
       const latest = await intakeRequest(token)
       if (!latest.slots.some(s => s.id === slot.id && s.regionCode === slot.regionCode)) throw new Error('EVENT_CLOSED')
@@ -112,7 +116,9 @@ export default function IntakeForms({ token, member, onMemberChange }: { token: 
       setError(''); setFieldErrors({})
       setStep(2)
     }} /></Suspense>
-    <MatchingPanel token={token} onReview={() => setStep(2)} onChanged={() => setAttempt(v => v + 1)} />
+    </div>
+    {visible && view === 'table' && <MatchingPanel token={token} onReview={() => { setStep(2); onNavigate?.('apply') }} onChanged={() => setAttempt(v => v + 1)} />}
+    <div hidden={view !== 'apply'}>
     <nav className="intake-steps" aria-label="참가 준비 단계">{['가입 기본정보','온보딩','회차 신청'].map((label, index) => <button type="button" key={label} className={step === index ? '' : 'secondary'} aria-current={step === index ? 'step' : undefined} onClick={() => { setStep(index); setNotice(''); setFieldErrors({}) }}>{index + 1}. {label}</button>)}</nav>
     {error && <div role="alert"><p className="member-error">{error}</p><button className="secondary" onClick={() => setAttempt(v => v + 1)}>다시 불러오기</button></div>}
     {notice && <p aria-live="polite">{notice}</p>}
@@ -140,7 +146,7 @@ export default function IntakeForms({ token, member, onMemberChange }: { token: 
     </form>}
     {step === 2 && <>
       <h3 ref={applicationHeading} tabIndex={-1}>이번 회차 신청</h3><p>식사 비용은 현장에서 각자 계산해요. 참가비와 별도입니다. 일정·지역 조합을 직접 선택해 주세요.</p>
-      <div className="previous-forms"><h4>기존 신청서 불러오기</h4>{data.applications.length ? data.applications.map(application => <div key={application.id}><p>{date(application.submittedAt)} 신청 · {applicationLabels[application.applicationStatus] ?? '확인 필요'} · 결제 {paymentLabels[application.paymentStatus] ?? '확인 필요'} · 매칭 {matchingLabels[application.matchingStatus] ?? '확인 필요'}</p><p>선택한 참가권: {application.input.ticketCode === 'single_v2' ? '1회권' : application.input.ticketCode.startsWith('membership') ? '멤버십' : '이전 참가권'}</p><button className="secondary" disabled={busy} onClick={async () => {
+      <div className="previous-forms"><h4 id="application-history-title" tabIndex={-1}>신청 내역·결제와 기존 신청서 불러오기</h4>{data.applications.length ? data.applications.map(application => <div key={application.id}><p>{date(application.submittedAt)} 신청 · {applicationLabels[application.applicationStatus] ?? '확인 필요'} · 결제 {paymentLabels[application.paymentStatus] ?? '확인 필요'} · 매칭 {matchingLabels[application.matchingStatus] ?? '확인 필요'}</p><p>선택한 참가권: {application.input.ticketCode === 'single_v2' ? '1회권' : application.input.ticketCode.startsWith('membership') ? '멤버십' : '이전 참가권'}</p><button className="secondary" disabled={busy} onClick={async () => {
         const value = await run(() => intakeRequest(token, '/reuse', { sourceId: application.id }), '이전 지역·참가권을 가져왔어요. 날짜는 다시 선택하고 현재 프로필을 확인해 주세요.')
         if (value?.draft) { setInput(value.draft.input); setSourceId(value.draft.sourceId); requestKey.current = crypto.randomUUID() }
       }}>이 신청서 불러오기</button><button className="secondary" onClick={() => {
@@ -179,5 +185,7 @@ export default function IntakeForms({ token, member, onMemberChange }: { token: 
         <button disabled={busy || !data.slots.length || !member.consentDocuments.some(doc => doc.kind === 'privacy') || !member.consentDocuments.some(doc => doc.kind === 'operations')}>신청서 제출</button>
       </form>
     </>}
+    <button type="button" className="secondary" onClick={() => onNavigate?.('table')}>내 식탁에서 진행 상태 확인</button>
+    </div>
   </div>
 }

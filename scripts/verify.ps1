@@ -25,6 +25,8 @@ try {
         if ($LASTEXITCODE -ne 0) { throw 'Privacy concurrency verification failed.' }
         node scripts/verify-operations-local.mjs
         if ($LASTEXITCODE -ne 0) { throw 'Operations concurrency verification failed.' }
+        node scripts/verify-policy-local.mjs
+        if ($LASTEXITCODE -ne 0) { throw 'Policy publication concurrency verification failed.' }
         node scripts/verify-safety-local.mjs
         if ($LASTEXITCODE -ne 0) { throw 'Safety concurrency verification failed.' }
         node scripts/verify-preferences-local.mjs

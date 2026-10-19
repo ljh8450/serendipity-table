@@ -42,7 +42,8 @@ begin
  if not exists(select 1 from app_private.content_jobs where table_id=t and kind='D1' and status='DONE') then
   raise exception 'D1 failed: %',(select jsonb_agg(jsonb_build_object('kind',kind,'error',last_error)) from app_private.content_jobs where table_id=t);end if;
  select id into j from app_private.content_jobs where table_id=t and kind='D1';
- if (select count(*) from app_private.chat_messages where system_key like 'content:'||j::text||':%')<>5 then raise exception 'D1 message count';end if;
+ if jsonb_array_length((select snapshot->'operatorTemplates' from app_private.content_jobs where id=j))<>1 then raise exception 'template snapshot missing';end if;
+ if (select count(*) from app_private.chat_messages where system_key like 'content:'||j::text||':%')<>6 then raise exception 'D1 message count';end if;
  if (select count(*) from app_private.member_notifications where table_id=t and kind='EVENT_REMINDER')<>4 then raise exception 'D1 recipients';end if;
  select count(*) into before_n from app_private.chat_messages;perform app_private.content_tick();
  if (select count(*) from app_private.chat_messages)<>before_n then raise exception 'duplicate content';end if;

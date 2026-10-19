@@ -24,7 +24,7 @@ test('mobile explicitly stores, transfers, cancels early and retries original-tr
     values(${target},now()+interval '14 days',now()-interval '1 day',now()+interval '1 day',now()+interval '2 days','gangnam','LOCAL RESOLUTION TARGET',true,24,now()+interval '1 day');
     select app_private.matching_tick();commit;`)
   try{
-    await page.goto('/')
+    await page.goto('/#table')
     await page.getByLabel('이메일',{exact:true}).fill(user.email)
     await page.getByLabel('비밀번호',{exact:true}).fill(user.password)
     await page.getByRole('button',{name:'로그인',exact:true}).click()
