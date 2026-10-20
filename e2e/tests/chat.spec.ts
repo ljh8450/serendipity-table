@@ -28,7 +28,7 @@ test('actual Cron opens a real shared chat; lost-response retry is unique and ca
   const token=await auth(primary),secondToken=await auth(second),headers={authorization:`Bearer ${token}`}
   let room=''
   await expect.poll(async()=>{const response=await request.get(`${data.apiUrl}/functions/v1/member/matching`,{headers});expect(response.status()).toBe(200);room=(await response.json()).applications.find((a:{id:string})=>a.id===db(`select ${app};`))?.table?.chat?.roomId??'';return !!room},{timeout:80000,intervals:[1500,2500]}).toBe(true)
-  await login(page,primary);await page.getByRole('button',{name:'단체방 열기',exact:true}).click()
+  await login(page,primary);await expect(page.getByLabel('보낼 메시지 (최대 1,000자)',{exact:true})).toHaveCount(0);await page.getByRole('link',{name:'채팅',exact:true}).click();await page.getByRole('button',{name:/채팅방 열기$/}).click()
   await expect(page.getByText('식탁 단체방이 열렸어요. 장소와 준비 안내는 매칭 상태에서 확인해 주세요.',{exact:true})).toBeVisible()
   let lost=false;const keys:string[]=[]
   await page.route('**/member/chat/*/messages',async route=>{keys.push(route.request().postDataJSON().requestKey);if(!lost){lost=true;const response=await route.fetch();expect(response.status()).toBe(200);await route.abort('failed')}else await route.continue()})
@@ -42,7 +42,7 @@ test('actual Cron opens a real shared chat; lost-response retry is unique and ca
   await expect(input).toHaveValue('')
   expect(keys).toHaveLength(2);expect(keys[0]).toBe(keys[1])
   expect(db(`select count(*) from app_private.chat_messages where room_id='${room}' and kind='MEMBER';`)).toBe('1')
-  await login(otherPage,second);await otherPage.getByRole('button',{name:'단체방 열기',exact:true}).click()
+  await login(otherPage,second);await otherPage.getByRole('link',{name:'채팅',exact:true}).click();await otherPage.getByRole('button',{name:/채팅방 열기$/}).click()
   await expect(otherPage.getByRole('list',{name:'대화 메시지'}).getByText(text,{exact:true})).toBeVisible()
   await expect(otherPage.getByRole('list',{name:'대화 메시지'}).locator('img')).toHaveCount(0)
   await otherPage.getByLabel('보낼 메시지 (최대 1,000자)',{exact:true}).fill('함께할 식사가 기대돼요.')
@@ -64,7 +64,7 @@ test('actual Cron opens a real shared chat; lost-response retry is unique and ca
   await expect(page.locator('body')).toHaveJSProperty('scrollWidth',390)
   await page.screenshot({path:'test-results/chat-mobile.png',fullPage:true})
   await page.getByRole('link',{name:'내 식탁',exact:true}).click()
-  await page.reload();await page.getByRole('button',{name:'단체방 열기',exact:true}).click()
+  await page.getByRole('link',{name:'채팅',exact:true}).click();await page.reload();await page.getByRole('button',{name:/채팅방 열기$/}).click();await page.getByRole('button',{name:'채팅방 목록으로',exact:true}).click();await expect(page.getByLabel('보낼 메시지 (최대 1,000자)',{exact:true})).toHaveCount(0);await page.getByRole('button',{name:/채팅방 열기$/}).click()
   await expect(page.getByRole('list',{name:'대화 메시지'}).getByText(text,{exact:true})).toBeVisible()
   const outsiderToken=await auth(data.users[0])
   expect((await request.get(`${data.apiUrl}/functions/v1/member/chat/${room}`,{headers:{authorization:`Bearer ${outsiderToken}`}})).status()).toBe(403)

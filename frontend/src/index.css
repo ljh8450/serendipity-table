@@ -4,6 +4,9 @@
 :root { font-family: Pretendard, system-ui, sans-serif; color: #3A342D; background: #F4EEE1; line-height: 1.6; font-synthesis: none; }
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+textarea, select { font-size: 16px; }
+textarea { resize: vertical; }
 button, input { font: inherit; min-height: 48px; border-radius: 8px; }
 button { cursor: pointer; padding: 12px 20px; background: #14513F; color: #FBF9F4; border: 1px solid #14513F; font-weight: 600; }
 button:disabled { opacity: .65; cursor: wait; }

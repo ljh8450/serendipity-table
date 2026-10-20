@@ -12,7 +12,7 @@ export default function OperationsOverview({ token }: { token: string }) {
   matchingRequest<Data>(token, '/operations/overview').then(v => { if (active) { setData(v); setError('') } }).catch(() => { if (active) setError('운영 현황을 불러오지 못했어요. 다시 시도해 주세요.') })
   return () => { active = false }
  }, [token, attempt])
- return <section aria-labelledby="overview-title"><h3 id="overview-title">운영 현황</h3>
+ return <section className="operations-overview" aria-labelledby="overview-title"><h3 id="overview-title">운영 현황</h3>
   <p>전체 또는 선택 회차의 현재 상태별 건수예요. 서로 다른 상태 축의 건수를 합산하지 마세요. 비율·기간별 분석은 아래 운영 지표에서 확인해요.</p>
   <button type="button" className="secondary" onClick={() => setAttempt(v => v + 1)}>운영 현황 새로고침</button>
   {error && <p role="alert">{error}</p>}{!data && !error && <p>운영 현황을 확인하고 있어요.</p>}

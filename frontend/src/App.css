@@ -1,4 +1,5 @@
-main { max-width: 640px; margin: 0 auto; padding: 48px 20px; }
+main { width: 100%; max-width: 640px; margin: 0 auto; padding: 32px 20px; padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); padding-bottom: max(32px, env(safe-area-inset-bottom)); }
+main:has([data-layout="workspace"]) { max-width: 1120px; }
 h1 { font-size: clamp(28px, 5vw, 32px); line-height: 1.3; color: #14513F; }
 h2 { font-size: 24px; line-height: 1.3; color: #14513F; }
 h3 { font-size: 20px; }
@@ -37,3 +38,39 @@ select:focus-visible, textarea:focus-visible { outline: 3px solid #14513F; outli
 .auth-links a { display: inline-flex; align-items: center; min-height: 48px; color: #14513F; }
 .auth-links a:focus-visible, .auth-primary:focus-visible { outline: 3px solid #14513F; outline-offset: 3px; }
 .auth-primary { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 20px; background: #14513F; color: #FBF9F4; border-radius: 8px; text-decoration: none; font-weight: 600; }
+
+/* Intrinsic sizes and wrapping also cover landscape and enlarged text. */
+section, article, form, fieldset, nav, .card-grid > * { min-width: 0; }
+button, input, select, textarea { max-width: 100%; }
+button, .page-nav a, .auth-primary { overflow-wrap: anywhere; }
+.member-area form { width: 100%; max-width: 640px; margin-left: auto; margin-right: auto; }
+.page-nav a { flex: 1 1 auto; }
+.card-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; margin-top: 24px; }
+.card-grid:empty { display: none; }
+.card-grid > .previous-forms { padding: 20px; border: 1px solid #D9CFBC; border-radius: 12px; }
+.card-grid h4 { margin-top: 0; }
+.chat-page > section { max-width: 640px; margin-left: auto; margin-right: auto; }
+.operations-overview dl { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.operations-overview dl > div { padding: 16px; border: 1px solid #D9CFBC; border-radius: 8px; }
+dd { margin-left: 0; overflow-wrap: anywhere; }
+
+@media (min-width: 768px) {
+  main { padding-top: 48px; }
+  section { padding: 24px; }
+  .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .operations-overview dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .operations-explorer dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; }
+}
+
+@media (min-width: 1024px) {
+  .operations-overview dl { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .operations-explorer form { max-width: none; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; }
+}
+
+@media (max-width: 479px) {
+  /* Nested panels retain space for fields on a 320px screen. */
+  .member-area section { padding-left: 12px; padding-right: 12px; }
+  .card-grid > .previous-forms { padding: 12px; }
+  .page-nav { gap: 8px 4px; }
+  .page-nav a { flex-basis: calc(33.333% - 4px); padding-left: 4px; padding-right: 4px; }
+}

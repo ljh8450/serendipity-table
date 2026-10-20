@@ -13,8 +13,8 @@ async function request<T>(token: string, path: string, payload?: unknown): Promi
   return data
 }
 const date = (s: string) => new Date(s).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
-export default function TableChat({ token, roomId }: { token: string; roomId: string }) {
-  const [open, setOpen] = useState(false)
+export default function TableChat({ token, roomId, standalone = false }: { token: string; roomId: string; standalone?: boolean }) {
+  const [open, setOpen] = useState(standalone)
   const [data, setData] = useState<Chat | null>(null)
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
@@ -68,7 +68,7 @@ export default function TableChat({ token, roomId }: { token: string; roomId: st
   }
   return <section aria-labelledby={`${id}-title`}>
     <h5 style={{ fontSize: 'inherit' }} id={`${id}-title`}>식탁 단체방</h5>
-    <button type="button" className="secondary" aria-expanded={open} aria-controls={`${id}-body`} onClick={() => { setOpen(v => !v); setData(null); setHistoryMode(false) }}>{open ? '단체방 닫기' : '단체방 열기'}</button>
+    {!standalone && <button type="button" className="secondary" aria-expanded={open} aria-controls={`${id}-body`} onClick={() => { setOpen(v => !v); setData(null); setHistoryMode(false) }}>{open ? '단체방 닫기' : '단체방 열기'}</button>}
     {open && <div id={`${id}-body`}>
       <p>현재 식탁 참가자만 읽고 쓸 수 있어요. 열린 방에서는 5초마다 최신 대화를 확인해요.</p>
       {error && <p role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}

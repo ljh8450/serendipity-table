@@ -25,7 +25,7 @@ export default function ReturnRecommendations({ token, onSelect }: { token: stri
   {data?.status === 'NO_HISTORY' && <p>참석이 확인된 식탁이 생기면 다음 모집을 추천해 드려요. 지금은 회차 신청에서 모집 일정을 확인해 주세요.</p>}
   {data?.status === 'NO_OPEN_SLOTS' && <p>이전에 선택한 지역에 추천할 모집이 없어요. 다음 모집을 기다리거나 회차 신청에서 직접 일정을 확인해 주세요.</p>}
   {data?.status === 'RESTRICTED' && <p>참가 제한 중에는 다음 식탁을 추천하지 않아요. 나의 안전 상태를 확인해 주세요.</p>}
-  {data?.items.map(slot => <div className="previous-forms" key={slot.id}>
+  <div className="card-grid">{data?.items.map(slot => <div className="previous-forms" key={slot.id}>
    <h4>{date(slot.startsAt)}</h4><p>{slot.regionLabel} · 4~6인 식탁</p>
    <p>{slot.reason === 'POSITIVE_EXPERIENCE' ? '다시 방문하고 싶다고 답한 식탁의 지역이에요.' : '이전 참석 신청에서 직접 선택한 지역이에요.'}</p>
    {slot.datePreference && <p>이전에 선택한 일정과 같은 요일·시간대예요.</p>}
@@ -36,6 +36,6 @@ export default function ReturnRecommendations({ token, onSelect }: { token: stri
     catch { setData(null); setError('현재 신청 가능한 일정인지 확인하지 못했어요. 다음 모집을 새로고침하고 다시 선택해 주세요.') }
     finally { setBusy(false) }
    }}>이 일정으로 신청서 작성 · {slot.regionLabel} {date(slot.startsAt)}</button>
-  </div>)}
+  </div>)}</div>
  </section>
 }

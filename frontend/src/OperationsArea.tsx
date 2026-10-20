@@ -71,7 +71,7 @@ export default function OperationsArea({ token }: { token: string }) {
     const time = (key: string) => new Date(`${fields.get(key)}:00+09:00`).toISOString()
     await run('/slot', { startsAt: time('startsAt'), opensAt: time('opensAt'), closesAt: time('closesAt'), matchesAt: time('matchesAt'), regionCode: fields.get('regionCode'), capacity: Number(fields.get('capacity')) }, '모집 초안을 만들었어요. 목록에서 확인 후 발행해 주세요.')
   }
-  return <section className="member-area" aria-labelledby="operations-title">
+  return <section className="member-area operations-area" aria-labelledby="operations-title">
     <h2 id="operations-title">운영 관리</h2><nav className="intake-steps" aria-label="운영 메뉴">{[['overview','현황·조회'],['prepare','모집 준비'],['automation','자동화 점검'],['safety','안전·개인정보']].map(([id,label]) => <button key={id} type="button" className={section === id ? '' : 'secondary'} aria-current={section === id ? 'page' : undefined} onClick={() => openSection(id)}>{label}</button>)}</nav><p>모집·문서를 사전 설정하면 신청과 매칭은 서버 규칙으로 처리해요.</p>
     {error && <div role="alert"><p>{error}</p><button className="secondary" onClick={() => setAttempt(v => v + 1)}>운영 정보 다시 불러오기</button></div>}
     {notice && <p role="status">{notice}</p>}
